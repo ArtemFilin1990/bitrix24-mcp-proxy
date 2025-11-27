@@ -1,5 +1,5 @@
 {
-  "version": 3,
+  "version": 2,
   "routes": [
     { "src": "/servers", "dest": "api/servers.js" },
     { "src": "/mcp", "dest": "api/mcp.js" }
