@@ -1,6 +1,6 @@
 export default function handler(req, res) {
   const base = `${req.headers["x-forwarded-proto"]}://${req.headers.host}`;
-  
+
   res.status(200).json({
     servers: [
       {
