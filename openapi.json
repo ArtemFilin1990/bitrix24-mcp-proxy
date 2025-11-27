@@ -1,0 +1,80 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Bitrix24 MCP Proxy",
+    "version": "1.0.0",
+    "description": "Proxy для выполнения Bitrix24 REST API через MCP."
+  },
+  "servers": [
+    {
+      "url": "https://bitrix24-mcp-proxy.vercel.app"
+    }
+  ],
+  "paths": {
+    "/mcp": {
+      "post": {
+        "operationId": "callBitrixMethod",
+        "summary": "Выполнить метод Bitrix24 через MCP Proxy",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "webhook": {
+                    "type": "string",
+                    "description": "Полный Bitrix24 webhook URL"
+                  },
+                  "method": {
+                    "type": "string",
+                    "description": "Название метода Bitrix24"
+                  },
+                  "params": {
+                    "type": "object",
+                    "description": "Параметры метода",
+                    "additionalProperties": true
+                  }
+                },
+                "required": ["webhook", "method"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Ответ Bitrix24 через MCP",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "Ответ Bitrix24",
+                  "additionalProperties": true
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/servers": {
+      "get": {
+        "operationId": "getMcpServers",
+        "summary": "Получить список MCP серверов",
+        "responses": {
+          "200": {
+            "description": "JSON со списком MCP серверов",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
