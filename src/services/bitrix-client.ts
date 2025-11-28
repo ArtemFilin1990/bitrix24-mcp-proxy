@@ -3,6 +3,8 @@
  * Provides a basic interface for interacting with the Bitrix24 REST API.
  */
 
+import fetch from 'node-fetch';
+
 export interface BitrixRequestParams {
   [key: string]: unknown;
 }
@@ -48,10 +50,13 @@ export class BitrixClient {
     });
 
     if (!response.ok) {
-      throw new Error(`Bitrix24 API error: ${response.status} ${response.statusText}`);
+      throw new Error(
+        `Bitrix24 API error: ${response.status} ${response.statusText} for ${method} at ${url}`
+      );
     }
 
-    return response.json() as Promise<BitrixResponse<T>>;
+    const data = await response.json();
+    return data as BitrixResponse<T>;
   }
 
   /**
