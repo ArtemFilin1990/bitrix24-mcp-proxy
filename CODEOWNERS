@@ -1,0 +1,18 @@
+# CODEOWNERS
+# Эти владельцы автоматически запрашиваются для ревью при открытии PR.
+
+# Владельцы по умолчанию для всего в репозитории
+* @ArtemFilin1990
+
+# Владельцы для CI/CD конфигурации
+.github/ @ArtemFilin1990
+
+# Владельцы для Docker конфигурации
+Dockerfile @ArtemFilin1990
+docker-compose.yml @ArtemFilin1990
+
+# Владельцы для исходного кода
+src/ @ArtemFilin1990
+
+# Владельцы для тестов
+tests/ @ArtemFilin1990
