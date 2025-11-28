@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import http from 'http';
 import { config } from './config/index.js';
 import { logger } from './utils/logger.js';
 import { Bitrix24Client } from './bitrix24/client.js';
@@ -21,37 +22,43 @@ async function main(): Promise<void> {
   logger.info({ configured: client.isConfigured() }, 'Bitrix24 client initialized');
   logger.info({ tools: Object.keys(tools) }, 'Available tools');
 
-  // Health check endpoint for Docker
-  if (process.env.HEALTH_CHECK) {
-    logger.info('Health check passed');
-    process.exit(0);
-  }
+  // Create HTTP server
+  const server = http.createServer((req, res) => {
+    // Health check endpoint
+    if (req.url === '/health') {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ status: 'ok', timestamp: new Date().toISOString() }));
+      return;
+    }
 
-  logger.info(`Server ready on port ${config.port}`);
+    // Default response
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(
+      JSON.stringify({
+        name: 'bitrix24-mcp-proxy',
+        version: '1.0.0',
+        status: 'running',
+      })
+    );
+  });
+
+  // Start server
+  server.listen(config.port, () => {
+    logger.info(`Server listening on port ${config.port}`);
+  });
+
+  // Graceful shutdown handler
+  const shutdown = () => {
+    logger.info('Shutting down gracefully...');
+    server.close(() => {
+      logger.info('Server closed');
+      process.exit(0);
+    });
+  };
+
+  process.on('SIGTERM', shutdown);
+  process.on('SIGINT', shutdown);
 }
-
-// Handle uncaught exceptions
-process.on('uncaughtException', (error) => {
-  logger.fatal({ error }, 'Uncaught exception');
-  process.exit(1);
-});
-
-// Handle unhandled promise rejections
-process.on('unhandledRejection', (reason, promise) => {
-  logger.fatal({ reason, promise }, 'Unhandled rejection');
-  process.exit(1);
-});
-
-// Graceful shutdown
-process.on('SIGTERM', () => {
-  logger.info('SIGTERM received, shutting down gracefully');
-  process.exit(0);
-});
-
-process.on('SIGINT', () => {
-  logger.info('SIGINT received, shutting down gracefully');
-  process.exit(0);
-});
 
 main().catch((error) => {
   logger.fatal({ error }, 'Failed to start application');
