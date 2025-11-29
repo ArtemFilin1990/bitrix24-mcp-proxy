@@ -39,7 +39,7 @@ export const ensureNumber = (value: unknown, message: string): number | undefine
     return undefined;
   }
 
-  if (typeof value !== 'number' || Number.isNaN(value)) {
+  if (typeof value !== 'number' || Number.isNaN(value) || !Number.isFinite(value)) {
     throw new BadRequestError(message);
   }
 

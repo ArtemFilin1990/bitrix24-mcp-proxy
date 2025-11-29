@@ -14,7 +14,7 @@ const ensurePositiveNumber = (value, message) => {
 
 const ensureNumber = (value, message) => {
   if (value === undefined || value === null) return undefined;
-  if (typeof value !== 'number' || Number.isNaN(value)) throw new BadRequestError(message);
+  if (typeof value !== 'number' || Number.isNaN(value) || !Number.isFinite(value)) throw new BadRequestError(message);
   return value;
 };
 
