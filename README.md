@@ -58,13 +58,50 @@ API-прокси для выполнения REST-методов Bitrix24 чер
 
 Ошибки возвращаются в JSON-формате с корректным HTTP-статусом (400/415 для ошибок клиента, 5xx для внутренних ошибок).
 
-### Поддерживаемые инструменты
-- **bitrix_get_deal** — получить сделку по ID (`id: number`).
-- **bitrix_create_deal** — создать сделку (`title: string`, `fields?: object`).
-- **bitrix_update_deal** — обновить сделку (`id: number`, `fields: object`).
-- **bitrix_find_contact** — найти контакт по телефону или email (`phone?: string`, `email?: string`).
-- **bitrix_create_contact** — создать контакт (`firstName: string`, `lastName?: string`, `phone?: string`, `email?: string`).
-- **bitrix_update_contact** — обновить контакт (`id: number`, `fields: object`).
+## Доступные инструменты
+
+### Сделки (Deals)
+| Инструмент | Описание |
+|------------|----------|
+| `bitrix_get_deal` | Получить сделку по ID |
+| `bitrix_create_deal` | Создать новую сделку |
+| `bitrix_update_deal` | Обновить сделку |
+| `bitrix_search_deals` | Поиск сделок по фильтру |
+
+### Контакты (Contacts)
+| Инструмент | Описание |
+|------------|----------|
+| `bitrix_get_contact` | Получить контакт по ID |
+| `bitrix_find_contact` | Найти контакт по телефону/email |
+| `bitrix_create_contact` | Создать новый контакт |
+| `bitrix_update_contact` | Обновить контакт |
+
+### Компании (Companies)
+| Инструмент | Описание |
+|------------|----------|
+| `bitrix_get_company` | Получить компанию по ID |
+| `bitrix_create_company` | Создать новую компанию |
+
+### Лиды (Leads)
+| Инструмент | Описание |
+|------------|----------|
+| `bitrix_get_lead` | Получить лид по ID |
+| `bitrix_create_lead` | Создать новый лид |
+
+### Timeline
+| Инструмент | Описание |
+|------------|----------|
+| `bitrix_add_comment` | Добавить комментарий к сущности |
+
+## Пример использования с ChatGPT
+
+Запрос пользователя:
+> Найди клиента +79995553311, создай сделку на 50 000 и добавь комментарий "Готовы начать"
+
+GPT вызывает:
+1. `bitrix_find_contact` → находит контакт
+2. `bitrix_create_deal` → создаёт сделку
+3. `bitrix_add_comment` → добавляет комментарий
 
 ## Запуск локально
 

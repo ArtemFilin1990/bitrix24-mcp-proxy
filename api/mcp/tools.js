@@ -62,6 +62,72 @@ export const toolDefinitions = [
       },
     },
   },
+  {
+    name: 'bitrix_search_deals',
+    description: 'Поиск сделок по фильтру (стадия, ответственный, дата, сумма).',
+    parameters: {
+      filter: {
+        type: 'object',
+        description: 'Фильтр поиска (STAGE_ID, ASSIGNED_BY_ID, >=OPPORTUNITY и др.).',
+        optional: true,
+      },
+      limit: { type: 'number', description: 'Лимит результатов (по умолчанию 50).', optional: true },
+    },
+  },
+  {
+    name: 'bitrix_add_comment',
+    description: 'Добавить комментарий к сделке, контакту, компании или лиду в timeline.',
+    parameters: {
+      entityType: { type: 'string', description: 'Тип сущности: deal, contact, lead, company.' },
+      entityId: { type: 'number', description: 'ID сущности.' },
+      comment: { type: 'string', description: 'Текст комментария.' },
+    },
+  },
+  {
+    name: 'bitrix_get_contact',
+    description: 'Получить контакт Bitrix24 по идентификатору.',
+    parameters: {
+      id: { type: 'number', description: 'Числовой ID контакта.' },
+    },
+  },
+  {
+    name: 'bitrix_create_company',
+    description: 'Создать новую компанию в Bitrix24.',
+    parameters: {
+      title: { type: 'string', description: 'Название компании.' },
+      fields: {
+        type: 'object',
+        description: 'Дополнительные поля (PHONE, EMAIL, ADDRESS и др.).',
+        optional: true,
+      },
+    },
+  },
+  {
+    name: 'bitrix_get_company',
+    description: 'Получить компанию Bitrix24 по идентификатору.',
+    parameters: {
+      id: { type: 'number', description: 'ID компании.' },
+    },
+  },
+  {
+    name: 'bitrix_create_lead',
+    description: 'Создать новый лид в Bitrix24.',
+    parameters: {
+      title: { type: 'string', description: 'Название лида.' },
+      fields: {
+        type: 'object',
+        description: 'Дополнительные поля (PHONE, EMAIL, SOURCE_ID и др.).',
+        optional: true,
+      },
+    },
+  },
+  {
+    name: 'bitrix_get_lead',
+    description: 'Получить лид Bitrix24 по идентификатору.',
+    parameters: {
+      id: { type: 'number', description: 'ID лида.' },
+    },
+  },
 ];
 
 export const tools = toolDefinitions.map((tool) => tool.name);
@@ -206,6 +272,77 @@ export const buildBitrixRequest = (toolName, args = {}) => {
       method: 'crm.contact.update',
       payload: { id, fields },
     };
+  }
+
+  if (toolName === 'bitrix_search_deals') {
+    const filter = ensureObject(normalizedArgs.filter, 'Parameter "filter" must be an object when provided') || {};
+    const limit = typeof normalizedArgs.limit === 'number' ? normalizedArgs.limit : 50;
+
+    return {
+      method: 'crm.deal.list',
+      payload: { filter, start: 0, limit },
+    };
+  }
+
+  if (toolName === 'bitrix_add_comment') {
+    const entityType = ensureString(normalizedArgs.entityType, 'Parameter "entityType" must be a non-empty string');
+    const entityId = ensurePositiveNumber(normalizedArgs.entityId, 'Parameter "entityId" must be a positive number');
+    const comment = ensureString(normalizedArgs.comment, 'Parameter "comment" must be a non-empty string');
+
+    const entityTypeMap = {
+      deal: 'deal',
+      contact: 'contact',
+      company: 'company',
+      lead: 'lead',
+    };
+
+    if (!entityType || !entityTypeMap[entityType.toLowerCase()]) {
+      throw new BadRequestError('Parameter "entityType" must be one of: deal, contact, company, lead');
+    }
+
+    return {
+      method: 'crm.timeline.comment.add',
+      payload: {
+        fields: {
+          ENTITY_ID: entityId,
+          ENTITY_TYPE: entityType.toUpperCase(),
+          COMMENT: comment,
+        },
+      },
+    };
+  }
+
+  if (toolName === 'bitrix_get_contact') {
+    const id = ensurePositiveNumber(normalizedArgs.id, 'Parameter "id" must be a positive number');
+    return { method: 'crm.contact.get', payload: { id } };
+  }
+
+  if (toolName === 'bitrix_create_company') {
+    const title = ensureString(normalizedArgs.title, 'Parameter "title" must be a non-empty string');
+    const fields = ensureObject(normalizedArgs.fields, 'Parameter "fields" must be an object when provided');
+    return {
+      method: 'crm.company.add',
+      payload: { fields: { TITLE: title, ...(fields || {}) } },
+    };
+  }
+
+  if (toolName === 'bitrix_get_company') {
+    const id = ensurePositiveNumber(normalizedArgs.id, 'Parameter "id" must be a positive number');
+    return { method: 'crm.company.get', payload: { id } };
+  }
+
+  if (toolName === 'bitrix_create_lead') {
+    const title = ensureString(normalizedArgs.title, 'Parameter "title" must be a non-empty string');
+    const fields = ensureObject(normalizedArgs.fields, 'Parameter "fields" must be an object when provided');
+    return {
+      method: 'crm.lead.add',
+      payload: { fields: { TITLE: title, ...(fields || {}) } },
+    };
+  }
+
+  if (toolName === 'bitrix_get_lead') {
+    const id = ensurePositiveNumber(normalizedArgs.id, 'Parameter "id" must be a positive number');
+    return { method: 'crm.lead.get', payload: { id } };
   }
 
   throw new BadRequestError(`Unknown tool: ${toolName}`);
