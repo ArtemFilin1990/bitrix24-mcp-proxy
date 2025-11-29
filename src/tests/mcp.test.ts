@@ -6,8 +6,10 @@ const BITRIX_BASE = 'https://example.bitrix.test';
 const BITRIX_PATH = '/rest/1/abc/';
 
 describe('MCP tool definitions', () => {
-  test('exposes all Bitrix tools as string names', () => {
-    expect(tools).toEqual([
+  test('exposes full tool definitions with metadata', () => {
+    const names = tools.map((tool) => tool.name);
+
+    expect(names).toEqual([
       'bitrix_get_deal',
       'bitrix_create_deal',
       'bitrix_update_deal',
@@ -15,6 +17,11 @@ describe('MCP tool definitions', () => {
       'bitrix_create_contact',
       'bitrix_update_contact',
     ]);
+
+    tools.forEach((tool) => {
+      expect(tool.description).toBeTruthy();
+      expect(tool.parameters).toBeDefined();
+    });
   });
 });
 
@@ -125,13 +132,18 @@ describe('MCP HTTP handlers', () => {
     expect(response.body).toEqual({ ok: true });
   });
 
-  test('GET /mcp/list_tools returns tool names', async () => {
+  test('GET /mcp/list_tools returns tool definitions', async () => {
     const app = await createApp();
 
     const response = await request(app).get('/mcp/list_tools');
 
     expect(response.status).toBe(200);
-    expect(response.body).toEqual({ tools });
+    expect(response.body.tools).toEqual(tools);
+    response.body.tools.forEach((tool: { name: string; description: string; parameters: object }) => {
+      expect(tool).toHaveProperty('name');
+      expect(tool).toHaveProperty('description');
+      expect(tool).toHaveProperty('parameters');
+    });
   });
 
   test('POST /mcp/call_tool validates content-type', async () => {
