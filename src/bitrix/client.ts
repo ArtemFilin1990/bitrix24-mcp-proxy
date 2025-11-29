@@ -1,8 +1,12 @@
-import axios from 'axios';
-import { config } from '../config/env.js';
+import { httpClient, HttpClientError, sendWithRetry } from '../core/httpClient.js';
 
-export const bitrix = axios.create({
-  baseURL: config.bitrixUrl,
-  timeout: 8000,
-  proxy: false,
-});
+export class BitrixClientError extends HttpClientError {}
+
+export const bitrix = httpClient;
+
+export const postWithRetry = async <T>(url: string, payload: unknown): Promise<T> =>
+  sendWithRetry<T>({
+    url,
+    method: 'POST',
+    data: payload,
+  });

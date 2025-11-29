@@ -81,6 +81,44 @@ export const buildContactRequest = (toolName: string, args: Record<string, unkno
       }
       return { method: 'crm.contact.add', payload: { fields } };
     }
+    case 'bitrix_create_contact': {
+      const firstName = ensureString(args.firstName, 'firstName must be a non-empty string');
+      const lastName = ensureString(args.lastName, 'lastName must be a non-empty string');
+      const email = ensureString(args.email, 'email must be a non-empty string');
+      const phone = ensureString(args.phone, 'phone must be a non-empty string');
+
+      const fields: Record<string, unknown> = {};
+
+      if (firstName) {
+        fields.NAME = firstName;
+      }
+
+      if (lastName) {
+        fields.LAST_NAME = lastName;
+      }
+
+      if (email) {
+        fields.EMAIL = [{ VALUE: email, VALUE_TYPE: 'WORK' }];
+      }
+
+      if (phone) {
+        fields.PHONE = [{ VALUE: phone, VALUE_TYPE: 'WORK' }];
+      }
+
+      if (Object.keys(fields).length === 0) {
+        throw new BadRequestError('At least one field is required to create contact');
+      }
+
+      return { method: 'crm.contact.add', payload: { fields } };
+    }
+    case 'bitrix_update_contact': {
+      const id = ensurePositiveNumber(args.id, 'id must be a positive number');
+      const fields = ensureObject(args.fields, 'Parameter "fields" must include at least one field');
+      if (!fields || Object.keys(fields).length === 0) {
+        throw new BadRequestError('Parameter "fields" must include at least one field');
+      }
+      return { method: 'crm.contact.update', payload: { id, fields } };
+    }
     case 'bitrix_contact_update': {
       const id = ensurePositiveNumber(args.id, 'id must be a positive number');
       const fields = ensureObject(args.fields, 'fields must be an object');
@@ -95,6 +133,20 @@ export const buildContactRequest = (toolName: string, args: Record<string, unkno
     }
     case 'bitrix_contact_fields': {
       return { method: 'crm.contact.fields', payload: {} };
+    }
+    case 'bitrix_find_contact': {
+      const phone = ensureString(args.phone, 'phone must be a non-empty string');
+      const email = ensureString(args.email, 'email must be a non-empty string');
+
+      if (!phone && !email) {
+        throw new BadRequestError('phone or email is required');
+      }
+
+      const filter = phone ? { PHONE: phone } : { EMAIL: email };
+      return {
+        method: 'crm.contact.list',
+        payload: { filter, select: ['ID', 'NAME', 'LAST_NAME', 'PHONE', 'EMAIL'] },
+      };
     }
     case 'bitrix_contact_search_by_phone': {
       const phone = ensureString(args.phone, 'phone must be a non-empty string');

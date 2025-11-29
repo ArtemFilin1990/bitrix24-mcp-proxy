@@ -1,8 +1,4 @@
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-};
+import { corsHeaders, methodNotAllowed, sendOk, setCors } from './mcp/http.js';
 
 export default function handler(req, res) {
   if (req.method === 'OPTIONS') {
@@ -10,9 +6,13 @@ export default function handler(req, res) {
     return res.end();
   }
 
-  Object.entries(corsHeaders).forEach(([key, value]) => res.setHeader(key, value));
+  setCors(res);
 
-  res.status(200).json({
+  if (req.method !== 'GET') {
+    return methodNotAllowed(res, ['GET', 'OPTIONS']);
+  }
+
+  return sendOk(res, {
     name: 'bitrix24-mcp-proxy',
     version: '1.0.0',
     description: 'MCP Proxy for Bitrix24',

@@ -1,5 +1,5 @@
 import { ToolDefinition } from '../types.js';
-import { BadRequestError, ensurePositiveNumber, ensureObject, ensureNumber, ensureArray } from '../validation.js';
+import { BadRequestError, ensurePositiveNumber, ensureObject, ensureNumber, ensureArray, ensureString } from '../validation.js';
 
 export const dealTools: ToolDefinition[] = [
   {
@@ -90,9 +90,20 @@ export const buildDealRequest = (toolName: string, args: Record<string, unknown>
       const start = ensureNumber(args.start, 'start must be a number') || 0;
       return { method: 'crm.deal.list', payload: { filter, select, order, start } };
     }
-    case 'bitrix_deal_get': {
+    case 'bitrix_deal_get':
+    case 'bitrix_get_deal': {
       const id = ensurePositiveNumber(args.id, 'id must be a positive number');
       return { method: 'crm.deal.get', payload: { id } };
+    }
+    case 'bitrix_create_deal': {
+      const title = ensureString(args.title, 'Parameter "title" must be a non-empty string');
+      if (!title) {
+        throw new BadRequestError('Parameter "title" must be a non-empty string');
+      }
+
+      const fields = ensureObject<Record<string, unknown>>(args.fields, 'Parameter "fields" must be an object when provided');
+      const payloadFields = { ...(fields ?? {}), TITLE: title };
+      return { method: 'crm.deal.add', payload: { fields: payloadFields } };
     }
     case 'bitrix_deal_add': {
       const fields = ensureObject<Record<string, unknown>>(args.fields, 'fields must be an object');
@@ -100,6 +111,14 @@ export const buildDealRequest = (toolName: string, args: Record<string, unknown>
         throw new BadRequestError('fields.TITLE is required');
       }
       return { method: 'crm.deal.add', payload: { fields } };
+    }
+    case 'bitrix_update_deal': {
+      const id = ensurePositiveNumber(args.id, 'id must be a positive number');
+      const fields = ensureObject(args.fields, 'Parameter "fields" must include at least one field');
+      if (!fields || Object.keys(fields).length === 0) {
+        throw new BadRequestError('Parameter "fields" must include at least one field');
+      }
+      return { method: 'crm.deal.update', payload: { id, fields } };
     }
     case 'bitrix_deal_update': {
       const id = ensurePositiveNumber(args.id, 'id must be a positive number');

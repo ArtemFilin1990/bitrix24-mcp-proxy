@@ -21,10 +21,45 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "ok": { "type": "boolean" }
-                  }
+                  "$ref": "#/components/schemas/PingResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Внутренняя ошибка",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/mcp/health": {
+      "get": {
+        "operationId": "health",
+        "summary": "Проверка состояния MCP сервиса",
+        "responses": {
+          "200": {
+            "description": "Сервис здоров",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Внутренняя ошибка",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -35,39 +70,24 @@
     "/mcp/list_tools": {
       "get": {
         "operationId": "listTools",
-        "summary": "Получить список MCP инструментов",
+        "summary": "Получить доступные MCP инструменты",
         "responses": {
           "200": {
-            "description": "Список инструментов MCP",
+            "description": "Список инструментов",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "tools": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "required": ["name", "description", "parameters"],
-                        "properties": {
-                          "name": { "type": "string" },
-                          "description": { "type": "string" },
-                          "parameters": {
-                            "type": "object",
-                            "additionalProperties": {
-                              "type": "object",
-                              "properties": {
-                                "type": { "type": "string" },
-                                "description": { "type": "string" },
-                                "optional": { "type": "boolean" },
-                                "additionalProperties": { "type": "boolean" }
-                              }
-                            }
-                          }
-                        }
-                      }
-                    }
-                  }
+                  "$ref": "#/components/schemas/ListToolsResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Внутренняя ошибка",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -84,22 +104,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "properties": {
-                  "tool": {
-                    "type": "string",
-                    "enum": [
-                      "bitrix_get_deal",
-                      "bitrix_create_deal",
-                      "bitrix_update_deal",
-                      "bitrix_find_contact",
-                      "bitrix_create_contact",
-                      "bitrix_update_contact"
-                    ]
-                  },
-                  "args": { "type": "object", "additionalProperties": true }
-                },
-                "required": ["tool"]
+                "$ref": "#/components/schemas/CallToolRequest"
               }
             }
           }
@@ -110,21 +115,57 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "result": { "type": "object", "additionalProperties": true }
-                  }
+                  "$ref": "#/components/schemas/CallToolResponse"
                 }
               }
             }
           },
-          "4XX": {
-            "description": "Ошибка запроса",
+          "400": {
+            "description": "Ошибка валидации запроса",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": { "error": { "type": "string" } }
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Неавторизован",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Нет прав на выполнение",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Слишком много запросов",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Внутренняя ошибка",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -134,19 +175,251 @@
     },
     "/servers": {
       "get": {
-        "operationId": "getMcpServers",
-        "summary": "Получить список MCP серверов",
+        "operationId": "listServers",
+        "summary": "Получить список серверов MCP",
         "responses": {
           "200": {
-            "description": "JSON со списком MCP серверов",
+            "description": "Доступные серверы MCP",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": true
+                  "$ref": "#/components/schemas/ServersResponse"
                 }
               }
             }
+          },
+          "500": {
+            "description": "Внутренняя ошибка",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "PingResponse": {
+        "type": "object",
+        "required": [
+          "ok"
+        ],
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "example": true
+          }
+        }
+      },
+      "HealthResponse": {
+        "type": "object",
+        "required": [
+          "ok",
+          "data"
+        ],
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "example": true
+          },
+          "data": {
+            "type": "object",
+            "required": [
+              "status"
+            ],
+            "properties": {
+              "status": {
+                "type": "string",
+                "example": "healthy"
+              }
+            }
+          }
+        }
+      },
+      "ToolParameter": {
+        "type": "object",
+        "required": [
+          "type",
+          "description"
+        ],
+        "properties": {
+          "type": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "optional": {
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "additionalProperties": false
+      },
+      "ToolDefinition": {
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "parameters"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "parameters": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/ToolParameter"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "ListToolsResponse": {
+        "type": "object",
+        "required": [
+          "ok",
+          "data"
+        ],
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "example": true
+          },
+          "data": {
+            "type": "object",
+            "required": [
+              "tools"
+            ],
+            "properties": {
+              "tools": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/ToolDefinition"
+                }
+              }
+            }
+          }
+        }
+      },
+      "CallToolRequest": {
+        "type": "object",
+        "required": [
+          "tool"
+        ],
+        "properties": {
+          "tool": {
+            "type": "string",
+            "description": "Имя инструмента Bitrix24"
+          },
+          "args": {
+            "type": "object",
+            "description": "Аргументы для инструмента",
+            "additionalProperties": true,
+            "default": {}
+          }
+        },
+        "additionalProperties": false
+      },
+      "CallToolResponse": {
+        "type": "object",
+        "required": [
+          "ok",
+          "data"
+        ],
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "example": true
+          },
+          "data": {
+            "description": "Результат Bitrix24",
+            "type": "object",
+            "additionalProperties": true
+          }
+        }
+      },
+      "ServersResponse": {
+        "type": "object",
+        "required": [
+          "ok",
+          "data"
+        ],
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "example": true
+          },
+          "data": {
+            "type": "object",
+            "required": [
+              "servers"
+            ],
+            "properties": {
+              "servers": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "name",
+                    "description",
+                    "url"
+                  ],
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "description": {
+                      "type": "string"
+                    },
+                    "url": {
+                      "type": "string",
+                      "format": "uri"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "required": [
+          "ok",
+          "message",
+          "code"
+        ],
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "const": false
+          },
+          "message": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "details": {
+            "oneOf": [
+              {
+                "type": "object",
+                "additionalProperties": true
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         }
       }

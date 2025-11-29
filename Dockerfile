@@ -3,38 +3,40 @@ FROM node:20-alpine AS base
 WORKDIR /app
 ENV NODE_ENV=production
 
-# Install all dependencies (dev + prod)
+# Install production dependencies only
 FROM base AS deps
+COPY package*.json ./
+RUN npm ci --omit=dev --ignore-scripts
+
+# Install dev dependencies for building
+FROM base AS build-deps
 ENV NODE_ENV=development
 COPY package*.json ./
 RUN npm ci --ignore-scripts
 
-# Development stage (hot reload via compose)
-FROM deps AS development
-COPY tsconfig*.json ./
-COPY src ./src
-COPY openapi.json ./openapi.json
-COPY vercel.json ./vercel.json
-CMD ["npm", "run", "dev"]
-
 # Build application
-FROM deps AS builder
+FROM build-deps AS builder
 COPY tsconfig*.json ./
+COPY openapi.json ./openapi.json
+COPY scripts ./scripts
 COPY src ./src
 RUN npm run build
 
-# Install only production dependencies
-FROM base AS prod-deps
-COPY package*.json ./
-RUN npm ci --omit=dev --ignore-scripts
+# Development stage (hot reload via compose)
+FROM build-deps AS development
+COPY tsconfig*.json ./
+COPY openapi.json ./openapi.json
+COPY scripts ./scripts
+COPY src ./src
+CMD ["npm", "run", "dev"]
 
 # Final runtime image
 FROM base AS runner
 USER node
 COPY --chown=node:node package*.json ./
-COPY --from=prod-deps /app/node_modules ./node_modules
-COPY --from=builder /app/build ./build
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=builder /app/dist ./dist
 EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
   CMD wget -q --spider http://localhost:3000/mcp/health || exit 1
-CMD ["node", "build/index.js"]
+CMD ["node", "dist/index.js"]

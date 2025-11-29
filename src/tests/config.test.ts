@@ -15,6 +15,9 @@ describe('Config env', () => {
     process.env.BITRIX_CLIENT_ID = 'client-id';
     process.env.BITRIX_CLIENT_SECRET = 'client-secret';
     process.env.BITRIX_PORTAL_DOMAIN = 'portal.bitrix24.test';
+    process.env.BITRIX_TIMEOUT_MS = '12000';
+    process.env.BITRIX_RETRY_COUNT = '4';
+    process.env.BITRIX_RETRY_DELAY_MS = '750';
     process.env.MCP_PORT = '4000';
     process.env.NODE_ENV = 'production';
 
@@ -24,6 +27,9 @@ describe('Config env', () => {
     expect(config.bitrixClientId).toBe('client-id');
     expect(config.bitrixClientSecret).toBe('client-secret');
     expect(config.bitrixPortalDomain).toBe('portal.bitrix24.test');
+    expect(config.bitrixTimeoutMs).toBe(12000);
+    expect(config.bitrixRetryCount).toBe(4);
+    expect(config.bitrixRetryDelayMs).toBe(750);
     expect(config.port).toBe(4000);
     expect(config.nodeEnv).toBe('production');
   });
@@ -41,6 +47,9 @@ describe('Config env', () => {
     delete process.env.BITRIX_CLIENT_ID;
     delete process.env.BITRIX_CLIENT_SECRET;
     delete process.env.BITRIX_PORTAL_DOMAIN;
+    delete process.env.BITRIX_TIMEOUT_MS;
+    delete process.env.BITRIX_RETRY_COUNT;
+    delete process.env.BITRIX_RETRY_DELAY_MS;
     delete process.env.MCP_PORT;
     delete process.env.NODE_ENV;
 
@@ -49,6 +58,9 @@ describe('Config env', () => {
     expect(config.bitrixClientId).toBeUndefined();
     expect(config.bitrixClientSecret).toBeUndefined();
     expect(config.bitrixPortalDomain).toBeUndefined();
+    expect(config.bitrixTimeoutMs).toBe(8000);
+    expect(config.bitrixRetryCount).toBe(3);
+    expect(config.bitrixRetryDelayMs).toBe(500);
     expect(config.port).toBe(3000);
     expect(config.nodeEnv).toBe('development');
   });
