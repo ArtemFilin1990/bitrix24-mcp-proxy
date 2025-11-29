@@ -1,32 +1,25 @@
 {
   "version": 2,
-  "buildCommand": "npm run build",
-  "outputDirectory": "api",
   "functions": {
     "api/**/*.js": {
       "runtime": "@vercel/node@3"
     }
   },
   "routes": [
+    { "src": "/mcp/ping", "dest": "/api/mcp/ping.js" },
+    { "src": "/mcp/list_tools", "dest": "/api/mcp/list_tools.js" },
+    { "src": "/mcp/call_tool", "dest": "/api/mcp/call_tool.js" },
+    { "src": "/servers", "dest": "/api/servers.js" },
+    { "src": "/(.*)", "dest": "/api/index.js" }
+  ],
+  "headers": [
     {
-      "src": "/mcp/ping",
-      "dest": "/api/mcp/ping.js"
-    },
-    {
-      "src": "/mcp/list_tools",
-      "dest": "/api/mcp/list_tools.js"
-    },
-    {
-      "src": "/mcp/call_tool",
-      "dest": "/api/mcp/call_tool.js"
-    },
-    {
-      "src": "/servers",
-      "dest": "/api/servers.js"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/api/index.js"
+      "source": "/(.*)",
+      "headers": [
+        { "key": "Access-Control-Allow-Origin", "value": "*" },
+        { "key": "Access-Control-Allow-Methods", "value": "GET, POST, OPTIONS" },
+        { "key": "Access-Control-Allow-Headers", "value": "Content-Type, Authorization" }
+      ]
     }
   ]
 }

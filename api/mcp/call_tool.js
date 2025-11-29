@@ -2,6 +2,16 @@ import { buildBitrixRequest } from './tools.js';
 import { postToBitrix } from './bitrix.js';
 import { BadRequestError } from './errors.js';
 
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+};
+
+const setCors = (res) => {
+  Object.entries(corsHeaders).forEach(([key, value]) => res.setHeader(key, value));
+};
+
 const validateJsonRequest = (req, res) => {
   const contentType = req.headers['content-type'] || '';
 
@@ -28,8 +38,15 @@ const validateJsonRequest = (req, res) => {
 };
 
 export default async function handler(req, res) {
+  if (req.method === 'OPTIONS') {
+    res.writeHead(204, corsHeaders);
+    return res.end();
+  }
+
+  setCors(res);
+
   if (req.method !== 'POST') {
-    res.setHeader('Allow', ['POST']);
+    res.setHeader('Allow', ['POST', 'OPTIONS']);
     return res.status(405).json({ error: { message: 'Method not allowed' } });
   }
 
