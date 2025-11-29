@@ -9,21 +9,20 @@ describe('MCP tool definitions', () => {
   test('exposes full tool definitions with metadata', () => {
     const names = tools.map((tool) => tool.name);
 
-    expect(names).toEqual([
-      'bitrix_get_deal',
-      'bitrix_create_deal',
-      'bitrix_update_deal',
-      'bitrix_find_contact',
-      'bitrix_create_contact',
-      'bitrix_update_contact',
-      'bitrix_search_deals',
-      'bitrix_add_comment',
-      'bitrix_get_contact',
-      'bitrix_create_company',
-      'bitrix_get_company',
-      'bitrix_create_lead',
-      'bitrix_get_lead',
-    ]);
+    // Check that all expected tools are present (60 total)
+    expect(names.length).toBe(60);
+
+    // Check some key tools from each category
+    expect(names).toContain('bitrix_deal_list');
+    expect(names).toContain('bitrix_deal_get');
+    expect(names).toContain('bitrix_lead_list');
+    expect(names).toContain('bitrix_contact_list');
+    expect(names).toContain('bitrix_company_list');
+    expect(names).toContain('bitrix_item_list');
+    expect(names).toContain('bitrix_activity_list');
+    expect(names).toContain('bitrix_task_list');
+    expect(names).toContain('bitrix_user_list');
+    expect(names).toContain('bitrix_batch');
 
     tools.forEach((tool) => {
       expect(tool.description).toBeTruthy();
@@ -33,25 +32,24 @@ describe('MCP tool definitions', () => {
 });
 
 describe('buildBitrixRequest', () => {
-  test('builds crm.deal.get payload for bitrix_get_deal', () => {
-    const { method, payload } = buildBitrixRequest('bitrix_get_deal', { id: 123 });
+  test('builds crm.deal.get payload for bitrix_deal_get', () => {
+    const { method, payload } = buildBitrixRequest('bitrix_deal_get', { id: 123 });
 
     expect(method).toBe('crm.deal.get');
     expect(payload).toEqual({ id: 123 });
   });
 
-  test('builds crm.deal.add payload for bitrix_create_deal', () => {
-    const { method, payload } = buildBitrixRequest('bitrix_create_deal', {
-      title: 'New deal',
-      fields: { COMMENTS: 'Test' },
+  test('builds crm.deal.add payload for bitrix_deal_add', () => {
+    const { method, payload } = buildBitrixRequest('bitrix_deal_add', {
+      fields: { TITLE: 'New deal', COMMENTS: 'Test' },
     });
 
     expect(method).toBe('crm.deal.add');
     expect(payload).toEqual({ fields: { TITLE: 'New deal', COMMENTS: 'Test' } });
   });
 
-  test('builds crm.deal.update payload for bitrix_update_deal', () => {
-    const { method, payload } = buildBitrixRequest('bitrix_update_deal', {
+  test('builds crm.deal.update payload for bitrix_deal_update', () => {
+    const { method, payload } = buildBitrixRequest('bitrix_deal_update', {
       id: 55,
       fields: { STAGE_ID: 'WON' },
     });
@@ -60,24 +58,23 @@ describe('buildBitrixRequest', () => {
     expect(payload).toEqual({ id: 55, fields: { STAGE_ID: 'WON' } });
   });
 
-  test('builds crm.contact.list payload for bitrix_find_contact', () => {
-    const { method, payload } = buildBitrixRequest('bitrix_find_contact', {
-      phone: '+15550000000',
-      email: 'user@example.com',
+  test('builds crm.contact.list payload for bitrix_contact_list', () => {
+    const { method, payload } = buildBitrixRequest('bitrix_contact_list', {
+      filter: { PHONE: '+15550000000' },
     });
 
     expect(method).toBe('crm.contact.list');
     expect(payload).toEqual({
-      filter: { PHONE: '+15550000000', EMAIL: 'user@example.com' },
-      select: ['ID', 'NAME', 'LAST_NAME', 'PHONE', 'EMAIL'],
+      filter: { PHONE: '+15550000000' },
+      select: ['*'],
+      order: {},
+      start: 0,
     });
   });
 
-  test('builds crm.contact.add payload for bitrix_create_contact', () => {
-    const { method, payload } = buildBitrixRequest('bitrix_create_contact', {
-      firstName: 'Jane',
-      lastName: 'Doe',
-      phone: '+155501',
+  test('builds crm.contact.add payload for bitrix_contact_add', () => {
+    const { method, payload } = buildBitrixRequest('bitrix_contact_add', {
+      fields: { NAME: 'Jane', LAST_NAME: 'Doe', PHONE: [{ VALUE: '+155501', VALUE_TYPE: 'WORK' }] },
     });
 
     expect(method).toBe('crm.contact.add');
@@ -90,8 +87,8 @@ describe('buildBitrixRequest', () => {
     });
   });
 
-  test('builds crm.contact.update payload for bitrix_update_contact', () => {
-    const { method, payload } = buildBitrixRequest('bitrix_update_contact', {
+  test('builds crm.contact.update payload for bitrix_contact_update', () => {
+    const { method, payload } = buildBitrixRequest('bitrix_contact_update', {
       id: 999,
       fields: { COMMENTS: 'Updated' },
     });
@@ -104,40 +101,39 @@ describe('buildBitrixRequest', () => {
     expect(() => buildBitrixRequest('unknown', {})).toThrow(BadRequestError);
   });
 
-  test('requires either phone or email for contact search', () => {
-    expect(() => buildBitrixRequest('bitrix_find_contact', {})).toThrow(BadRequestError);
+  test('requires phone for contact search by phone', () => {
+    expect(() => buildBitrixRequest('bitrix_contact_search_by_phone', {})).toThrow(BadRequestError);
   });
 
-  test('builds crm.deal.list payload for bitrix_search_deals', () => {
-    const { method, payload } = buildBitrixRequest('bitrix_search_deals', {
+  test('builds crm.deal.list payload for bitrix_deal_list', () => {
+    const { method, payload } = buildBitrixRequest('bitrix_deal_list', {
       filter: { STAGE_ID: 'WON' },
-      limit: 10,
     });
     expect(method).toBe('crm.deal.list');
-    expect(payload).toEqual({ filter: { STAGE_ID: 'WON' }, start: 0, limit: 10 });
+    expect(payload).toEqual({ filter: { STAGE_ID: 'WON' }, select: ['*'], order: {}, start: 0 });
   });
 
-  test('builds crm.deal.list with default limit for bitrix_search_deals', () => {
-    const { method, payload } = buildBitrixRequest('bitrix_search_deals', {});
+  test('builds crm.deal.list with defaults for bitrix_deal_list', () => {
+    const { method, payload } = buildBitrixRequest('bitrix_deal_list', {});
     expect(method).toBe('crm.deal.list');
-    expect(payload).toEqual({ filter: {}, start: 0, limit: 50 });
+    expect(payload).toEqual({ filter: {}, select: ['*'], order: {}, start: 0 });
   });
 
-  test('builds crm.timeline.comment.add payload for bitrix_add_comment', () => {
-    const { method, payload } = buildBitrixRequest('bitrix_add_comment', {
+  test('builds crm.timeline.comment.add payload for bitrix_timeline_comment_add', () => {
+    const { method, payload } = buildBitrixRequest('bitrix_timeline_comment_add', {
       entityType: 'deal',
       entityId: 123,
       comment: 'Test comment',
     });
     expect(method).toBe('crm.timeline.comment.add');
     expect(payload).toEqual({
-      fields: { ENTITY_ID: 123, ENTITY_TYPE: 'DEAL', COMMENT: 'Test comment' },
+      fields: { ENTITY_ID: 123, ENTITY_TYPE: 'deal', COMMENT: 'Test comment' },
     });
   });
 
-  test('rejects invalid entityType for bitrix_add_comment', () => {
+  test('rejects invalid entityType for bitrix_timeline_comment_add', () => {
     expect(() =>
-      buildBitrixRequest('bitrix_add_comment', {
+      buildBitrixRequest('bitrix_timeline_comment_add', {
         entityType: 'invalid',
         entityId: 1,
         comment: 'test',
@@ -145,38 +141,36 @@ describe('buildBitrixRequest', () => {
     ).toThrow(BadRequestError);
   });
 
-  test('builds crm.contact.get payload for bitrix_get_contact', () => {
-    const { method, payload } = buildBitrixRequest('bitrix_get_contact', { id: 456 });
+  test('builds crm.contact.get payload for bitrix_contact_get', () => {
+    const { method, payload } = buildBitrixRequest('bitrix_contact_get', { id: 456 });
     expect(method).toBe('crm.contact.get');
     expect(payload).toEqual({ id: 456 });
   });
 
-  test('builds crm.company.add payload for bitrix_create_company', () => {
-    const { method, payload } = buildBitrixRequest('bitrix_create_company', {
-      title: 'ACME Corp',
-      fields: { INDUSTRY: 'IT' },
+  test('builds crm.company.add payload for bitrix_company_add', () => {
+    const { method, payload } = buildBitrixRequest('bitrix_company_add', {
+      fields: { TITLE: 'ACME Corp', INDUSTRY: 'IT' },
     });
     expect(method).toBe('crm.company.add');
     expect(payload).toEqual({ fields: { TITLE: 'ACME Corp', INDUSTRY: 'IT' } });
   });
 
-  test('builds crm.company.get payload for bitrix_get_company', () => {
-    const { method, payload } = buildBitrixRequest('bitrix_get_company', { id: 789 });
+  test('builds crm.company.get payload for bitrix_company_get', () => {
+    const { method, payload } = buildBitrixRequest('bitrix_company_get', { id: 789 });
     expect(method).toBe('crm.company.get');
     expect(payload).toEqual({ id: 789 });
   });
 
-  test('builds crm.lead.add payload for bitrix_create_lead', () => {
-    const { method, payload } = buildBitrixRequest('bitrix_create_lead', {
-      title: 'New Lead',
-      fields: { SOURCE_ID: 'WEB' },
+  test('builds crm.lead.add payload for bitrix_lead_add', () => {
+    const { method, payload } = buildBitrixRequest('bitrix_lead_add', {
+      fields: { TITLE: 'New Lead', SOURCE_ID: 'WEB' },
     });
     expect(method).toBe('crm.lead.add');
     expect(payload).toEqual({ fields: { TITLE: 'New Lead', SOURCE_ID: 'WEB' } });
   });
 
-  test('builds crm.lead.get payload for bitrix_get_lead', () => {
-    const { method, payload } = buildBitrixRequest('bitrix_get_lead', { id: 101 });
+  test('builds crm.lead.get payload for bitrix_lead_get', () => {
+    const { method, payload } = buildBitrixRequest('bitrix_lead_get', { id: 101 });
     expect(method).toBe('crm.lead.get');
     expect(payload).toEqual({ id: 101 });
   });
@@ -248,7 +242,7 @@ describe('MCP HTTP handlers', () => {
     const response = await request(app)
       .post('/mcp/call_tool')
       .set('Content-Type', 'application/json')
-      .send({ tool: 'bitrix_get_deal', args: { id: 42 } });
+      .send({ tool: 'bitrix_deal_get', args: { id: 42 } });
 
     expect(response.body).toEqual({ result: { ID: '42', TITLE: 'Demo' } });
     expect(response.status).toBe(200);
@@ -261,9 +255,9 @@ describe('MCP HTTP handlers', () => {
     const response = await request(app)
       .post('/mcp/call_tool')
       .set('Content-Type', 'application/json')
-      .send({ tool: 'bitrix_get_deal', args: { id: 'oops' } });
+      .send({ tool: 'bitrix_deal_get', args: { id: 'oops' } });
 
     expect(response.status).toBe(400);
-    expect(response.body).toEqual({ error: { message: 'Parameter "id" must be a positive number' } });
+    expect(response.body).toEqual({ error: { message: 'id must be a positive number' } });
   });
 });
