@@ -23,7 +23,7 @@ const validateJsonRequest = (req, res) => {
   if (typeof req.body === 'string') {
     try {
       req.body = JSON.parse(req.body || '{}');
-    } catch {
+    } catch (error) {
       res.status(400).json({ error: { message: 'Invalid JSON payload' } });
       return false;
     }
