@@ -89,14 +89,10 @@ export const buildMiscRequest = (toolName, args) => {
       if (!entityType || !comment) {
         throw new BadRequestError('entityType, entityId and comment are required');
       }
-      const entityTypeMap = {
-        lead: 'lead',
-        deal: 'deal',
-        contact: 'contact',
-        company: 'company',
-      };
-      const ownerType = entityTypeMap[entityType.toLowerCase()];
-      if (!ownerType) {
+      // Validate entity type against allowed values
+      const validEntityTypes = ['lead', 'deal', 'contact', 'company'];
+      const normalizedEntityType = entityType.toLowerCase();
+      if (!validEntityTypes.includes(normalizedEntityType)) {
         throw new BadRequestError('entityType must be one of: lead, deal, contact, company');
       }
       return {
@@ -104,7 +100,7 @@ export const buildMiscRequest = (toolName, args) => {
         payload: {
           fields: {
             ENTITY_ID: entityId,
-            ENTITY_TYPE: ownerType,
+            ENTITY_TYPE: normalizedEntityType,
             COMMENT: comment,
           },
         },

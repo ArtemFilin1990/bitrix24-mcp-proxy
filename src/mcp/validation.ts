@@ -27,7 +27,7 @@ export const ensureString = (value: unknown, message: string): string | undefine
 };
 
 export const ensurePositiveNumber = (value: unknown, message: string): number => {
-  if (typeof value !== 'number' || Number.isNaN(value) || value <= 0) {
+  if (typeof value !== 'number' || Number.isNaN(value) || !Number.isFinite(value) || value <= 0) {
     throw new BadRequestError(message);
   }
 

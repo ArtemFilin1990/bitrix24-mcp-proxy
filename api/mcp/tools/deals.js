@@ -22,7 +22,7 @@ const ensureString = (value, message) => {
 };
 
 const ensurePositiveNumber = (value, message) => {
-  if (typeof value !== 'number' || Number.isNaN(value) || value <= 0) {
+  if (typeof value !== 'number' || Number.isNaN(value) || !Number.isFinite(value) || value <= 0) {
     throw new BadRequestError(message);
   }
   return value;
