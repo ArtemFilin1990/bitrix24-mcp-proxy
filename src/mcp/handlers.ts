@@ -17,7 +17,8 @@ export const listTools = (_req: Request, res: Response): void => {
 
 export const callTool = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { method, payload } = buildBitrixRequest(req.body as McpCallPayload);
+    const { tool, args } = req.body as McpCallPayload;
+    const { method, payload } = buildBitrixRequest(tool, args);
     const base = ensureBitrixBase();
     const url = `${base}/${method}.json`;
 
