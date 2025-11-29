@@ -289,14 +289,9 @@ export const buildBitrixRequest = (toolName, args = {}) => {
     const entityId = ensurePositiveNumber(normalizedArgs.entityId, 'Parameter "entityId" must be a positive number');
     const comment = ensureString(normalizedArgs.comment, 'Parameter "comment" must be a non-empty string');
 
-    const entityTypeMap = {
-      deal: 'deal',
-      contact: 'contact',
-      company: 'company',
-      lead: 'lead',
-    };
+    const allowedEntityTypes = ['deal', 'contact', 'company', 'lead'];
 
-    if (!entityType || !entityTypeMap[entityType.toLowerCase()]) {
+    if (!entityType || !allowedEntityTypes.includes(entityType.toLowerCase())) {
       throw new BadRequestError('Parameter "entityType" must be one of: deal, contact, company, lead');
     }
 
