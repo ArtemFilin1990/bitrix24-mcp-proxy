@@ -1,114 +1,84 @@
-Bitrix24 MCP Proxy for Vercel
+# Bitrix24 MCP Proxy for Vercel
 
-API-proxy для выполнения REST-методов Bitrix24 через MCP-коннектор (ChatGPT Custom Actions).
+API-прокси для выполнения REST-методов Bitrix24 через MCP-коннектор (ChatGPT Custom Actions).
 
-Endpoints
+## Переменные окружения
 
-GET /servers
+Создайте файл `.env` на основе `.env.example` и задайте значения:
 
-Возвращает список MCP-серверов.
+- `BITRIX_WEBHOOK_URL` — полный URL вебхука Bitrix24 (например, `https://<portal>.bitrix24.ru/rest/<user>/<token>/`).
+- `BITRIX_CLIENT_ID`, `BITRIX_CLIENT_SECRET`, `BITRIX_PORTAL_DOMAIN` — при необходимости получения токена.
+- `MCP_PORT` — порт локального MCP-сервера (по умолчанию `3000`).
+- `NODE_ENV` — окружение выполнения (`development`/`production`).
 
-Response:
+Секреты не должны попадать в репозиторий; используйте `.env.example` как шаблон.
 
-{
-  "servers": [
-    {
-      "name": "bitrix24-mcp",
-      "description": "MCP Proxy for Bitrix24",
-      "url": "https://bitrix24-mcp-proxy.vercel.app/mcp"
-    }
-  ]
-}
+## Endpoints
 
-GET /mcp/ping
+### GET /mcp/ping
+Проверка доступности MCP-сервера. Возвращает строго `{ "ok": true }`.
 
-Проверка доступности MCP-сервера. Возвращает `{ "ok": true }`.
+### GET /mcp/list_tools
+Возвращает список доступных MCP-инструментов в виде массива имён:
 
-GET /mcp/list_tools
-
-Возвращает список инструментов MCP в формате, ожидаемом ChatGPT.
-
-Response:
+```json
 {
   "tools": [
-    {
-      "name": "bitrix_get_deal",
-      "description": "Получить сделку Bitrix24 по идентификатору.",
-      "parameters": {
-        "id": { "type": "number", "description": "Числовой ID сделки Bitrix24." }
-      }
-    },
-    {
-      "name": "bitrix_create_deal",
-      "description": "Создать новую сделку Bitrix24 с обязательным заголовком и дополнительными полями.",
-      "parameters": {
-        "title": { "type": "string", "description": "Название сделки." },
-        "fields": {
-          "type": "object",
-          "description": "Дополнительные поля сделки (например, COMMENTS, OPPORTUNITY).",
-          "additionalProperties": true
-        }
-      }
-    }
+    "bitrix_get_deal",
+    "bitrix_create_deal",
+    "bitrix_update_deal",
+    "bitrix_find_contact",
+    "bitrix_create_contact",
+    "bitrix_update_contact"
   ]
 }
+```
 
-POST /mcp/call_tool
+### POST /mcp/call_tool
+Выполняет выбранный инструмент Bitrix24. Тело запроса должно быть `application/json`:
 
-Выполняет вызов инструмента Bitrix24.
-
-Body:
+```json
 {
   "tool": "bitrix_get_deal",
   "args": { "id": 1 }
 }
+```
 
-или
+Успешный ответ возвращает поле `result` без дополнительных обёрток:
 
-{
-  "tool": "bitrix_create_deal",
-  "args": { "title": "New Deal", "fields": { "COMMENTS": "Комментарий" } }
-}
+```json
+{ "result": { "ID": "1", "TITLE": "Demo" } }
+```
 
-Response:
-Возвращает поле `result` с оригинальным ответом Bitrix24 или ошибку с пояснением.
+Ошибки возвращаются в JSON-формате с корректным HTTP-статусом (400/415 для ошибок клиента, 5xx для внутренних ошибок).
 
-OpenAPI Specification
+### Поддерживаемые инструменты
+- **bitrix_get_deal** — получить сделку по ID (`id: number`).
+- **bitrix_create_deal** — создать сделку (`title: string`, `fields?: object`).
+- **bitrix_update_deal** — обновить сделку (`id: number`, `fields: object`).
+- **bitrix_find_contact** — найти контакт по телефону или email (`phone?: string`, `email?: string`).
+- **bitrix_create_contact** — создать контакт (`firstName: string`, `lastName?: string`, `phone?: string`, `email?: string`).
+- **bitrix_update_contact** — обновить контакт (`id: number`, `fields: object`).
 
-Файл:
+## Запуск локально
 
-openapi.json
+```bash
+npm install
+npm run dev
+```
 
-Используется для ChatGPT Custom Actions.
+MCP-сервер будет доступен по адресу `http://localhost:${MCP_PORT}/mcp`.
 
-Деплой на Vercel
+## Тестирование и форматирование
 
-1. Создать GitHub репозиторий.
-2. Залить файлы проекта.
-3. Развернуть через https://vercel.com/new.
-4. Использовать URL:
+```bash
+npm run lint
+npm test -- --runInBand
+```
 
-https://PROJECT.vercel.app/servers
+Husky pre-commit запускает линт и тесты перед коммитом, чтобы предотвратить попадание неформатированного или нерабочего кода.
 
-Структура проекта
+## Деплой на Vercel
 
-/
-├── api/
-│   ├── mcp/
-│   │   ├── bitrix.js
-│   │   ├── call_tool.js
-│   │   ├── errors.js
-│   │   ├── list_tools.js
-│   │   ├── ping.js
-│   │   └── tools.js
-│   └── servers.js
-├── openapi.json
-├── vercel.json
-├── package.json
-├── README.md
-
-Защита (опционально)
-
-При включенной Vercel Authentication использовать заголовок:
-
-x-vercel-protection-bypass: YOUR_TOKEN
+- Перед деплоем задайте переменные окружения (минимум `BITRIX_WEBHOOK_URL`).
+- Vercel маршрутизирует запросы согласно `vercel.json` на функции в `api/mcp/*`.
