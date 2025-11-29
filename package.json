@@ -4,9 +4,11 @@
   "type": "module",
   "scripts": {
     "dev": "ts-node-dev --respawn src/index.ts",
-    "start": "node build/index.js",
-    "build": "tsc",
-    "vercel-build": "tsc",
+    "start": "node dist/index.js",
+    "validate:openapi": "node scripts/validate-openapi.mjs",
+    "build": "npm run validate:openapi && tsc",
+    "vercel-build": "npm run validate:openapi && tsc && npm run vercel:bundle",
+    "vercel:bundle": "mkdir -p dist && cp -R api dist/api",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "test": "jest --runInBand",
@@ -19,6 +21,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.15.0",
+    "@apidevtools/swagger-parser": "^10.0.3",
     "@types/express": "^5.0.0",
     "@types/jest": "^30.0.0",
     "@types/node": "^22.10.0",

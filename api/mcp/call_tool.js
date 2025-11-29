@@ -1,22 +1,13 @@
 import { buildBitrixRequest } from './tools.js';
 import { postToBitrix } from './bitrix.js';
 import { BadRequestError } from './errors.js';
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-};
-
-const setCors = (res) => {
-  Object.entries(corsHeaders).forEach(([key, value]) => res.setHeader(key, value));
-};
+import { corsHeaders, methodNotAllowed, sendError, sendOk, setCors } from './http.js';
 
 const validateJsonRequest = (req, res) => {
   const contentType = req.headers['content-type'] || '';
 
   if (!contentType.includes('application/json')) {
-    res.status(415).json({ error: { message: 'Content-Type must be application/json' } });
+    sendError(res, 415, 'Content-Type must be application/json', 'UNSUPPORTED_MEDIA_TYPE');
     return false;
   }
 
@@ -24,13 +15,13 @@ const validateJsonRequest = (req, res) => {
     try {
       req.body = JSON.parse(req.body || '{}');
     } catch (error) {
-      res.status(400).json({ error: { message: 'Invalid JSON payload' } });
+      sendError(res, 400, 'Invalid JSON payload', 'INVALID_JSON');
       return false;
     }
   }
 
   if (!req.body || typeof req.body !== 'object' || Array.isArray(req.body)) {
-    res.status(400).json({ error: { message: 'Request body must be a JSON object' } });
+    sendError(res, 400, 'Request body must be a JSON object', 'INVALID_PAYLOAD');
     return false;
   }
 
@@ -46,8 +37,7 @@ export default async function handler(req, res) {
   setCors(res);
 
   if (req.method !== 'POST') {
-    res.setHeader('Allow', ['POST', 'OPTIONS']);
-    return res.status(405).json({ error: { message: 'Method not allowed' } });
+    return methodNotAllowed(res, ['POST', 'OPTIONS']);
   }
 
   if (!validateJsonRequest(req, res)) {
@@ -59,10 +49,11 @@ export default async function handler(req, res) {
     const { method, payload } = buildBitrixRequest(tool, args);
     const bitrixResponse = await postToBitrix(method, payload);
     const result = bitrixResponse?.result ?? bitrixResponse;
-    return res.status(200).json({ result });
+    return sendOk(res, result ?? {});
   } catch (error) {
     const statusCode = error?.statusCode || (error instanceof BadRequestError ? 400 : 500);
     const message = error?.message || 'Unknown error';
-    return res.status(statusCode).json({ error: { message } });
+    const code = error instanceof BadRequestError ? 'VALIDATION_ERROR' : 'UPSTREAM_ERROR';
+    return sendError(res, statusCode, message, code);
   }
 }

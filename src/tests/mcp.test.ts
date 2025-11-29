@@ -300,7 +300,7 @@ describe('MCP HTTP handlers', () => {
     const response = await request(app).get('/mcp/health');
 
     expect(response.status).toBe(200);
-    expect(response.body).toEqual({ status: 'healthy' });
+    expect(response.body).toEqual({ ok: true, data: { status: 'healthy' } });
   });
 
   test('GET /mcp/list_tools returns tool definitions', async () => {
@@ -309,8 +309,8 @@ describe('MCP HTTP handlers', () => {
     const response = await request(app).get('/mcp/list_tools');
 
     expect(response.status).toBe(200);
-    expect(response.body.tools).toEqual(tools);
-    response.body.tools.forEach((tool: { name: string; description: string; parameters: object }) => {
+    expect(response.body).toEqual({ ok: true, data: { tools } });
+    response.body.data.tools.forEach((tool: { name: string; description: string; parameters: object }) => {
       expect(tool).toHaveProperty('name');
       expect(tool).toHaveProperty('description');
       expect(tool).toHaveProperty('parameters');
@@ -326,7 +326,7 @@ describe('MCP HTTP handlers', () => {
       .send('invalid');
 
     expect(response.status).toBe(415);
-    expect(response.body).toEqual({ error: { message: 'Content-Type must be application/json' } });
+    expect(response.body).toEqual({ ok: false, message: 'Content-Type must be application/json', code: 'UNSUPPORTED_MEDIA_TYPE' });
   });
 
   test('POST /mcp/call_tool returns Bitrix result', async () => {
@@ -341,7 +341,7 @@ describe('MCP HTTP handlers', () => {
       .set('Content-Type', 'application/json')
       .send({ tool: 'bitrix_deal_get', args: { id: 42 } });
 
-    expect(response.body).toEqual({ result: { ID: '42', TITLE: 'Demo' } });
+    expect(response.body).toEqual({ ok: true, data: { ID: '42', TITLE: 'Demo' } });
     expect(response.status).toBe(200);
     expect(scope.isDone()).toBe(true);
   });
@@ -355,7 +355,7 @@ describe('MCP HTTP handlers', () => {
       .send({ tool: 'bitrix_deal_get', args: { id: 'oops' } });
 
     expect(response.status).toBe(400);
-    expect(response.body).toEqual({ error: { message: 'id must be a positive number' } });
+    expect(response.body).toEqual({ ok: false, message: 'id must be a positive number', code: 'VALIDATION_ERROR', details: null });
   });
 
   test('POST /mcp/call_tool handles invalid JSON syntax', async () => {
@@ -367,7 +367,7 @@ describe('MCP HTTP handlers', () => {
       .send('{ invalid json }');
 
     expect(response.status).toBe(400);
-    expect(response.body).toEqual({ error: { message: 'Invalid JSON payload' } });
+    expect(response.body).toEqual({ ok: false, message: 'Invalid JSON payload', code: 'INVALID_JSON' });
   });
 
   test('POST /mcp/call_tool rejects non-object body', async () => {
@@ -379,7 +379,7 @@ describe('MCP HTTP handlers', () => {
       .send([1, 2, 3]);
 
     expect(response.status).toBe(400);
-    expect(response.body).toEqual({ error: { message: 'Request body must be a JSON object' } });
+    expect(response.body).toEqual({ ok: false, message: 'Request body must be a JSON object', code: 'INVALID_PAYLOAD' });
   });
 
   test('POST /mcp/call_tool handles upstream 500 error', async () => {
@@ -409,7 +409,7 @@ describe('MCP HTTP handlers', () => {
       .set('Content-Type', 'application/json')
       .send({ tool: 'bitrix_get_deal', args: { id: 42 } });
 
-    expect(response.status).toBe(502);
+    expect(response.status).toBe(400);
   });
 
   test('POST /mcp/call_tool returns response data when no result field', async () => {
@@ -425,6 +425,6 @@ describe('MCP HTTP handlers', () => {
       .send({ tool: 'bitrix_get_deal', args: { id: 42 } });
 
     expect(response.status).toBe(200);
-    expect(response.body).toEqual({ result: { data: 'custom response' } });
+    expect(response.body).toEqual({ ok: true, data: { data: 'custom response' } });
   });
 });

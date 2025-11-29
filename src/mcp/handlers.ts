@@ -1,7 +1,7 @@
-import { Request, Response } from 'express';
-import { bitrix } from '../bitrix/client.js';
+import { NextFunction, Request, Response } from 'express';
+import { bitrix, postWithRetry } from '../bitrix/client.js';
 import { McpCallPayload } from './types.js';
-import { BadRequestError, buildBitrixRequest, tools } from './tools.js';
+import { buildBitrixRequest, tools } from './tools.js';
 
 const ensureBitrixBase = (): string => {
   if (!bitrix.defaults.baseURL) {
@@ -13,37 +13,27 @@ const ensureBitrixBase = (): string => {
 
 const validateJsonRequest = (req: Request, res: Response): boolean => {
   if (!req.is('application/json')) {
-    res.status(415).json({ error: { message: 'Content-Type must be application/json' } });
+    res
+      .status(415)
+      .json({ ok: false, message: 'Content-Type must be application/json', code: 'UNSUPPORTED_MEDIA_TYPE' });
     return false;
   }
 
   if (!req.body || typeof req.body !== 'object' || Array.isArray(req.body)) {
-    res.status(400).json({ error: { message: 'Request body must be a JSON object' } });
+    res
+      .status(400)
+      .json({ ok: false, message: 'Request body must be a JSON object', code: 'INVALID_PAYLOAD' });
     return false;
   }
 
   return true;
 };
 
-const buildErrorResponse = (error: unknown) => {
-  const message = error instanceof Error ? error.message : 'Unknown error';
-  const upstreamStatus = (error as { response?: { status?: number } })?.response?.status;
-  const status = error instanceof BadRequestError
-    ? 400
-    : typeof upstreamStatus === 'number'
-      ? upstreamStatus >= 500
-        ? upstreamStatus
-        : 502
-      : (error as { statusCode?: number })?.statusCode || 500;
-
-  return { status, body: { error: { message } } };
-};
-
 export const listTools = (_req: Request, res: Response): void => {
-  res.status(200).json({ tools });
+  res.status(200).json({ ok: true, data: { tools } });
 };
 
-export const callTool = async (req: Request, res: Response): Promise<void> => {
+export const callTool = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   if (!validateJsonRequest(req, res)) {
     return;
   }
@@ -55,12 +45,11 @@ export const callTool = async (req: Request, res: Response): Promise<void> => {
     const base = ensureBitrixBase();
     const url = `${base}/${method}.json`;
 
-    const response = await bitrix.post(url, payload);
-    const resultPayload = (response.data as { result?: unknown })?.result ?? response.data;
-    res.status(200).json({ result: resultPayload });
+    const response = await postWithRetry<{ result?: unknown } | Record<string, unknown>>(url, payload);
+    const resultPayload = (response as { result?: unknown })?.result ?? response;
+    res.status(200).json({ ok: true, data: resultPayload });
   } catch (error) {
-    const { status, body } = buildErrorResponse(error);
-    res.status(status).json(body);
+    next(error);
   }
 };
 
@@ -69,5 +58,5 @@ export const ping = (_req: Request, res: Response): void => {
 };
 
 export const health = (_req: Request, res: Response): void => {
-  res.status(200).json({ status: 'healthy' });
+  res.status(200).json({ ok: true, data: { status: 'healthy' } });
 };

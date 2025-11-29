@@ -1,10 +1,5 @@
+import { corsHeaders, methodNotAllowed, sendOk, setCors } from './http.js';
 import { tools } from './tools.js';
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-};
 
 export default function handler(req, res) {
   if (req.method === 'OPTIONS') {
@@ -12,12 +7,11 @@ export default function handler(req, res) {
     return res.end();
   }
 
-  Object.entries(corsHeaders).forEach(([key, value]) => res.setHeader(key, value));
+  setCors(res);
 
   if (req.method !== 'GET') {
-    res.setHeader('Allow', ['GET', 'OPTIONS']);
-    return res.status(405).json({ error: 'Method not allowed' });
+    return methodNotAllowed(res, ['GET', 'OPTIONS']);
   }
 
-  return res.status(200).json({ tools });
+  return sendOk(res, { tools });
 }
