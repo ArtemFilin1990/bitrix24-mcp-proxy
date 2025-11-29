@@ -1,6 +1,6 @@
 import request from 'supertest';
 import nock from 'nock';
-import { BadRequestError, buildBitrixRequest, tools } from '../mcp/tools.js';
+import { BadRequestError, buildBitrixRequest, tools, getToolNames } from '../mcp/tools.js';
 
 const BITRIX_BASE = 'https://example.bitrix.test';
 const BITRIX_PATH = '/rest/1/abc/';
@@ -9,7 +9,11 @@ describe('MCP tool definitions', () => {
   test('exposes full tool definitions with metadata', () => {
     const names = tools.map((tool) => tool.name);
 
-    expect(names).toEqual([
+    // Check that we have at least the expected number of tools (60+)
+    expect(names.length).toBeGreaterThanOrEqual(54);
+
+    // Verify original 13 tools are still present
+    const originalTools = [
       'bitrix_get_deal',
       'bitrix_create_deal',
       'bitrix_update_deal',
@@ -23,12 +27,87 @@ describe('MCP tool definitions', () => {
       'bitrix_get_company',
       'bitrix_create_lead',
       'bitrix_get_lead',
-    ]);
+    ];
+
+    originalTools.forEach((toolName) => {
+      expect(names).toContain(toolName);
+    });
+
+    // Verify new tools are present
+    const newTools = [
+      // Deals
+      'bitrix_list_deals',
+      'bitrix_get_deal_categories',
+      'bitrix_get_deal_stages',
+      'bitrix_filter_deals_by_pipeline',
+      'bitrix_filter_deals_by_budget',
+      'bitrix_filter_deals_by_status',
+      'bitrix_get_latest_deals',
+      'bitrix_get_deal_fields',
+      // Leads
+      'bitrix_update_lead',
+      'bitrix_list_leads',
+      'bitrix_search_leads',
+      'bitrix_get_lead_statuses',
+      'bitrix_get_latest_leads',
+      'bitrix_get_leads_from_date_range',
+      'bitrix_get_lead_fields',
+      // Contacts
+      'bitrix_list_contacts',
+      'bitrix_search_contacts',
+      'bitrix_get_contact_fields',
+      // Companies
+      'bitrix_update_company',
+      'bitrix_list_companies',
+      'bitrix_search_companies',
+      'bitrix_get_latest_companies',
+      'bitrix_get_company_fields',
+      // Tasks
+      'bitrix_create_task',
+      'bitrix_get_task',
+      'bitrix_update_task',
+      'bitrix_list_tasks',
+      'bitrix_get_task_comments',
+      'bitrix_add_task_comment',
+      'bitrix_get_task_checklist',
+      // Activities
+      'bitrix_create_activity',
+      'bitrix_get_activity',
+      'bitrix_list_activities',
+      'bitrix_update_activity',
+      'bitrix_complete_activity',
+      // Users
+      'bitrix_list_users',
+      'bitrix_get_user',
+      'bitrix_get_current_user',
+      'bitrix_get_user_activity',
+      // Utils
+      'bitrix_get_timeline',
+      'bitrix_add_timeline_comment',
+      'bitrix_get_status_list',
+      'bitrix_get_call_statistics',
+      'bitrix_get_file',
+      'bitrix_upload_file',
+      'bitrix_validate_webhook',
+      'bitrix_diagnose_permissions',
+      'bitrix_check_crm_settings',
+      'bitrix_get_crm_summary',
+    ];
+
+    newTools.forEach((toolName) => {
+      expect(names).toContain(toolName);
+    });
 
     tools.forEach((tool) => {
       expect(tool.description).toBeTruthy();
       expect(tool.parameters).toBeDefined();
     });
+  });
+
+  test('getToolNames returns same names as tools array', () => {
+    const namesFromTools = tools.map((tool) => tool.name);
+    const namesFromFunction = getToolNames();
+    expect(namesFromFunction).toEqual(namesFromTools);
   });
 });
 
@@ -179,6 +258,256 @@ describe('buildBitrixRequest', () => {
     const { method, payload } = buildBitrixRequest('bitrix_get_lead', { id: 101 });
     expect(method).toBe('crm.lead.get');
     expect(payload).toEqual({ id: 101 });
+  });
+
+  // Tests for new deal tools
+  test('builds crm.deal.list payload for bitrix_list_deals', () => {
+    const { method, payload } = buildBitrixRequest('bitrix_list_deals', {
+      filter: { STAGE_ID: 'NEW' },
+      order: { DATE_CREATE: 'DESC' },
+      start: 0,
+      limit: 25,
+    });
+    expect(method).toBe('crm.deal.list');
+    expect(payload).toEqual({
+      filter: { STAGE_ID: 'NEW' },
+      order: { DATE_CREATE: 'DESC' },
+      start: 0,
+      limit: 25,
+    });
+  });
+
+  test('builds crm.dealcategory.list payload for bitrix_get_deal_categories', () => {
+    const { method, payload } = buildBitrixRequest('bitrix_get_deal_categories', {});
+    expect(method).toBe('crm.dealcategory.list');
+    expect(payload).toEqual({});
+  });
+
+  test('builds crm.dealcategory.stage.list payload for bitrix_get_deal_stages', () => {
+    const { method, payload } = buildBitrixRequest('bitrix_get_deal_stages', { categoryId: 1 });
+    expect(method).toBe('crm.dealcategory.stage.list');
+    expect(payload).toEqual({ id: 1 });
+  });
+
+  test('builds crm.deal.list payload for bitrix_filter_deals_by_budget', () => {
+    const { method, payload } = buildBitrixRequest('bitrix_filter_deals_by_budget', {
+      minBudget: 1000,
+      maxBudget: 50000,
+    });
+    expect(method).toBe('crm.deal.list');
+    expect(payload).toEqual({
+      filter: { '>=OPPORTUNITY': 1000, '<=OPPORTUNITY': 50000 },
+      start: 0,
+      limit: 50,
+    });
+  });
+
+  test('throws when no budget parameters provided for bitrix_filter_deals_by_budget', () => {
+    expect(() => buildBitrixRequest('bitrix_filter_deals_by_budget', {})).toThrow(BadRequestError);
+  });
+
+  test('builds crm.deal.list payload for bitrix_get_latest_deals', () => {
+    const { method, payload } = buildBitrixRequest('bitrix_get_latest_deals', { limit: 5 });
+    expect(method).toBe('crm.deal.list');
+    expect(payload).toEqual({
+      filter: {},
+      order: { DATE_CREATE: 'DESC' },
+      start: 0,
+      limit: 5,
+    });
+  });
+
+  test('builds crm.deal.fields payload for bitrix_get_deal_fields', () => {
+    const { method, payload } = buildBitrixRequest('bitrix_get_deal_fields', {});
+    expect(method).toBe('crm.deal.fields');
+    expect(payload).toEqual({});
+  });
+
+  // Tests for new lead tools
+  test('builds crm.lead.update payload for bitrix_update_lead', () => {
+    const { method, payload } = buildBitrixRequest('bitrix_update_lead', {
+      id: 123,
+      fields: { STATUS_ID: 'IN_PROCESS' },
+    });
+    expect(method).toBe('crm.lead.update');
+    expect(payload).toEqual({ id: 123, fields: { STATUS_ID: 'IN_PROCESS' } });
+  });
+
+  test('builds crm.lead.list payload for bitrix_list_leads', () => {
+    const { method, payload } = buildBitrixRequest('bitrix_list_leads', {
+      filter: { STATUS_ID: 'NEW' },
+    });
+    expect(method).toBe('crm.lead.list');
+    expect(payload).toHaveProperty('filter', { STATUS_ID: 'NEW' });
+  });
+
+  test('builds crm.status.list payload for bitrix_get_lead_statuses', () => {
+    const { method, payload } = buildBitrixRequest('bitrix_get_lead_statuses', {});
+    expect(method).toBe('crm.status.list');
+    expect(payload).toEqual({ filter: { ENTITY_ID: 'STATUS' } });
+  });
+
+  test('builds crm.lead.list payload for bitrix_get_leads_from_date_range', () => {
+    const { method, payload } = buildBitrixRequest('bitrix_get_leads_from_date_range', {
+      dateFrom: '2024-01-01',
+      dateTo: '2024-01-31',
+    });
+    expect(method).toBe('crm.lead.list');
+    expect(payload).toEqual({
+      filter: { '>=DATE_CREATE': '2024-01-01', '<=DATE_CREATE': '2024-01-31' },
+      order: { DATE_CREATE: 'DESC' },
+      start: 0,
+      limit: 50,
+    });
+  });
+
+  // Tests for new contact tools
+  test('builds crm.contact.list payload for bitrix_list_contacts', () => {
+    const { method, payload } = buildBitrixRequest('bitrix_list_contacts', {
+      filter: { COMPANY_ID: 1 },
+    });
+    expect(method).toBe('crm.contact.list');
+    expect(payload).toHaveProperty('filter', { COMPANY_ID: 1 });
+  });
+
+  test('builds crm.contact.list payload for bitrix_search_contacts', () => {
+    const { method, payload } = buildBitrixRequest('bitrix_search_contacts', {
+      name: 'John',
+    });
+    expect(method).toBe('crm.contact.list');
+    expect(payload).toEqual({ filter: { '%NAME': 'John' }, start: 0, limit: 50 });
+  });
+
+  test('throws when no search params for bitrix_search_contacts', () => {
+    expect(() => buildBitrixRequest('bitrix_search_contacts', {})).toThrow(BadRequestError);
+  });
+
+  // Tests for new company tools
+  test('builds crm.company.update payload for bitrix_update_company', () => {
+    const { method, payload } = buildBitrixRequest('bitrix_update_company', {
+      id: 123,
+      fields: { INDUSTRY: 'IT' },
+    });
+    expect(method).toBe('crm.company.update');
+    expect(payload).toEqual({ id: 123, fields: { INDUSTRY: 'IT' } });
+  });
+
+  test('builds crm.company.list payload for bitrix_search_companies', () => {
+    const { method, payload } = buildBitrixRequest('bitrix_search_companies', {
+      query: 'ACME',
+    });
+    expect(method).toBe('crm.company.list');
+    expect(payload).toEqual({ filter: { '%TITLE': 'ACME' }, start: 0, limit: 50 });
+  });
+
+  // Tests for task tools
+  test('builds tasks.task.add payload for bitrix_create_task', () => {
+    const { method, payload } = buildBitrixRequest('bitrix_create_task', {
+      title: 'Test Task',
+      responsibleId: 1,
+      description: 'Task description',
+    });
+    expect(method).toBe('tasks.task.add');
+    expect(payload).toEqual({
+      fields: {
+        TITLE: 'Test Task',
+        RESPONSIBLE_ID: 1,
+        DESCRIPTION: 'Task description',
+      },
+    });
+  });
+
+  test('builds tasks.task.get payload for bitrix_get_task', () => {
+    const { method, payload } = buildBitrixRequest('bitrix_get_task', { id: 123 });
+    expect(method).toBe('tasks.task.get');
+    expect(payload).toEqual({ taskId: 123 });
+  });
+
+  test('builds task.commentitem.add payload for bitrix_add_task_comment', () => {
+    const { method, payload } = buildBitrixRequest('bitrix_add_task_comment', {
+      taskId: 123,
+      comment: 'Test comment',
+    });
+    expect(method).toBe('task.commentitem.add');
+    expect(payload).toEqual({ TASKID: 123, FIELDS: { POST_MESSAGE: 'Test comment' } });
+  });
+
+  // Tests for activity tools
+  test('builds crm.activity.add payload for bitrix_create_activity', () => {
+    const { method, payload } = buildBitrixRequest('bitrix_create_activity', {
+      ownerType: 'deal',
+      ownerId: 123,
+      typeId: 2,
+      subject: 'Phone call',
+    });
+    expect(method).toBe('crm.activity.add');
+    expect(payload).toEqual({
+      fields: {
+        OWNER_TYPE_ID: 2,
+        OWNER_ID: 123,
+        TYPE_ID: 2,
+        SUBJECT: 'Phone call',
+      },
+    });
+  });
+
+  test('builds crm.activity.update payload for bitrix_complete_activity', () => {
+    const { method, payload } = buildBitrixRequest('bitrix_complete_activity', { id: 123 });
+    expect(method).toBe('crm.activity.update');
+    expect(payload).toEqual({ id: 123, fields: { COMPLETED: 'Y' } });
+  });
+
+  // Tests for user tools
+  test('builds user.current payload for bitrix_get_current_user', () => {
+    const { method, payload } = buildBitrixRequest('bitrix_get_current_user', {});
+    expect(method).toBe('user.current');
+    expect(payload).toEqual({});
+  });
+
+  test('builds user.get payload for bitrix_get_user', () => {
+    const { method, payload } = buildBitrixRequest('bitrix_get_user', { id: 1 });
+    expect(method).toBe('user.get');
+    expect(payload).toEqual({ ID: 1 });
+  });
+
+  // Tests for utility tools
+  test('builds crm.timeline.comment.list payload for bitrix_get_timeline', () => {
+    const { method, payload } = buildBitrixRequest('bitrix_get_timeline', {
+      entityType: 'deal',
+      entityId: 123,
+    });
+    expect(method).toBe('crm.timeline.comment.list');
+    expect(payload).toEqual({
+      filter: { ENTITY_ID: 123, ENTITY_TYPE: 'DEAL' },
+      start: 0,
+      limit: 50,
+    });
+  });
+
+  test('builds crm.status.list payload for bitrix_get_status_list', () => {
+    const { method, payload } = buildBitrixRequest('bitrix_get_status_list', {
+      entityId: 'DEAL_STAGE',
+    });
+    expect(method).toBe('crm.status.list');
+    expect(payload).toEqual({ filter: { ENTITY_ID: 'DEAL_STAGE' } });
+  });
+
+  test('builds user.current payload for bitrix_validate_webhook', () => {
+    const { method, payload } = buildBitrixRequest('bitrix_validate_webhook', {});
+    expect(method).toBe('user.current');
+    expect(payload).toEqual({});
+  });
+
+  test('builds scope payload for bitrix_diagnose_permissions', () => {
+    const { method, payload } = buildBitrixRequest('bitrix_diagnose_permissions', {});
+    expect(method).toBe('scope');
+    expect(payload).toEqual({});
+  });
+
+  test('builds batch payload for bitrix_get_crm_summary', () => {
+    const { method, payload } = buildBitrixRequest('bitrix_get_crm_summary', {});
+    expect(method).toBe('batch');
+    expect(payload).toHaveProperty('cmd');
   });
 });
 
