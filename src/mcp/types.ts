@@ -6,5 +6,5 @@ export interface McpTool {
 
 export interface McpCallPayload {
   tool: string;
-  args: Record<string, unknown>;
+  args?: Record<string, unknown>;
 }

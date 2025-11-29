@@ -20,23 +20,123 @@ Response:
   ]
 }
 
-POST /mcp
+GET /mcp/ping
 
-Выполняет вызов метода Bitrix24 через прокси.
+Проверка доступности MCP-сервера. Возвращает `{ "ok": true }`.
+
+GET /mcp/list_tools
+
+Возвращает список инструментов MCP в формате, ожидаемом ChatGPT.
+
+Response:
+{
+  "tools": [
+    {
+      "name": "bitrix_get_deal",
+      "description": "Получить сделку Bitrix24 по идентификатору.",
+      "parameters": {
+        "id": { "type": "number", "description": "Числовой ID сделки Bitrix24." }
+      }
+    },
+    {
+      "name": "bitrix_create_deal",
+      "description": "Создать новую сделку Bitrix24 с обязательным заголовком и дополнительными полями.",
+      "parameters": {
+        "title": { "type": "string", "description": "Название сделки." },
+        "fields": {
+          "type": "object",
+          "description": "Дополнительные поля сделки (например, COMMENTS, OPPORTUNITY).",
+          "additionalProperties": true
+        }
+      }
+    },
+    {
+      "name": "bitrix_update_deal",
+      "description": "Обновить поля существующей сделки Bitrix24 по идентификатору.",
+      "parameters": {
+        "id": { "type": "number", "description": "Числовой ID сделки Bitrix24." },
+        "fields": {
+          "type": "object",
+          "description": "Набор полей сделки для обновления (например, STAGE_ID, COMMENTS, OPPORTUNITY).",
+          "additionalProperties": true
+        }
+      }
+    },
+    {
+      "name": "bitrix_find_contact",
+      "description": "Найти контакт по телефону или email (хотя бы один параметр обязателен).",
+      "parameters": {
+        "phone": { "type": "string", "description": "Телефон в международном формате." },
+        "email": { "type": "string", "description": "Email контакта." }
+      }
+    },
+    {
+      "name": "bitrix_add_deal_comment",
+      "description": "Добавить комментарий в ленту сделки.",
+      "parameters": {
+        "id": { "type": "number", "description": "Числовой ID сделки Bitrix24." },
+        "comment": { "type": "string", "description": "Текст комментария." }
+      }
+    },
+    {
+      "name": "bitrix_trigger_automation",
+      "description": "Запустить автоматизацию (триггер) для сущности Bitrix24.",
+      "parameters": {
+        "code": { "type": "string", "description": "Код триггера автоматизации, настроенный в Bitrix24." },
+        "entityType": { "type": "string", "description": "Тип сущности (DEAL или LEAD). По умолчанию DEAL." },
+        "entityId": { "type": "number", "description": "Числовой ID сущности, для которой запускаем автоматизацию." }
+      }
+    }
+  ]
+}
+
+POST /mcp/call_tool
+
+Выполняет вызов инструмента Bitrix24.
 
 Body:
+{
+  "tool": "bitrix_get_deal",
+  "args": { "id": 1 }
+}
+
+или
 
 {
-  "webhook": "https://example.bitrix24.ru/rest/1/KEY/",
-  "method": "crm.deal.list",
-  "params": {
-    "select": ["ID", "TITLE"],
-    "filter": { "STAGE_ID": "NEW" }
-  }
+  "tool": "bitrix_create_deal",
+  "args": { "title": "New Deal", "fields": { "COMMENTS": "Комментарий" } }
+}
+
+или
+
+{
+  "tool": "bitrix_update_deal",
+  "args": { "id": 123, "fields": { "STAGE_ID": "WON" } }
+}
+
+или
+
+{
+  "tool": "bitrix_find_contact",
+  "args": { "phone": "+79990001122" }
+}
+
+или
+
+{
+  "tool": "bitrix_add_deal_comment",
+  "args": { "id": 5012, "comment": "Позвонили клиенту" }
+}
+
+или
+
+{
+  "tool": "bitrix_trigger_automation",
+  "args": { "code": "AUTO_STAGE", "entityType": "DEAL", "entityId": 5012 }
 }
 
 Response:
-Возвращает оригинальный ответ Bitrix24.
+Возвращает поле `result` с оригинальным ответом Bitrix24 или ошибку с пояснением.
 
 OpenAPI Specification
 
@@ -49,17 +149,9 @@ openapi.json
 Деплой на Vercel
 
 1. Создать GitHub репозиторий.
-
-
 2. Залить файлы проекта.
-
-
 3. Развернуть через https://vercel.com/new.
-
-
 4. Использовать URL:
-
-
 
 https://PROJECT.vercel.app/servers
 
@@ -67,12 +159,18 @@ https://PROJECT.vercel.app/servers
 
 /
 ├── api/
-│   ├── mcp.js
+│   ├── mcp/
+│   │   ├── bitrix.js
+│   │   ├── call_tool.js
+│   │   ├── errors.js
+│   │   ├── list_tools.js
+│   │   ├── ping.js
+│   │   └── tools.js
 │   └── servers.js
 ├── openapi.json
 ├── vercel.json
 ├── package.json
-└── README.md
+├── README.md
 
 Защита (опционально)
 
