@@ -4,7 +4,8 @@ API-прокси для выполнения REST-методов Bitrix24 чер
 
 ## Возможности
 - MCP endpoints `/mcp/ping`, `/mcp/list_tools`, `/mcp/call_tool`.
-- Валидация входных параметров для Bitrix24 методов сделок и контактов.
+- **60 MCP-инструментов** для работы с Bitrix24 CRM.
+- Валидация входных параметров для всех методов.
 - Готовые Docker/Compose манифесты и Makefile для быстрой разработки.
 - CI/CD: lint → test → build, аудит зависимостей, CodeQL и автоматический релиз по тегу.
 
@@ -30,10 +31,10 @@ API-прокси для выполнения REST-методов Bitrix24 чер
 {
   "tools": [
     {
-      "name": "bitrix_get_deal",
+      "name": "bitrix_deal_get",
       "description": "Получить сделку Bitrix24 по идентификатору.",
       "parameters": {
-        "id": { "type": "number", "description": "Числовой ID сделки Bitrix24." }
+        "id": { "type": "number", "description": "ID сделки" }
       }
     }
   ]
@@ -45,7 +46,7 @@ API-прокси для выполнения REST-методов Bitrix24 чер
 
 ```json
 {
-  "tool": "bitrix_get_deal",
+  "tool": "bitrix_deal_get",
   "args": { "id": 1 }
 }
 ```
@@ -58,40 +59,103 @@ API-прокси для выполнения REST-методов Bitrix24 чер
 
 Ошибки возвращаются в JSON-формате с корректным HTTP-статусом (400/415 для ошибок клиента, 5xx для внутренних ошибок).
 
-## Доступные инструменты
+## Доступные инструменты (60)
 
-### Сделки (Deals)
+### Сделки — 10 инструментов
 | Инструмент | Описание |
 |------------|----------|
-| `bitrix_get_deal` | Получить сделку по ID |
-| `bitrix_create_deal` | Создать новую сделку |
-| `bitrix_update_deal` | Обновить сделку |
-| `bitrix_search_deals` | Поиск сделок по фильтру |
+| `bitrix_deal_list` | Получить список сделок с фильтрацией, сортировкой и выборкой полей |
+| `bitrix_deal_get` | Получить сделку по ID |
+| `bitrix_deal_add` | Создать новую сделку |
+| `bitrix_deal_update` | Обновить сделку |
+| `bitrix_deal_delete` | Удалить сделку |
+| `bitrix_deal_fields` | Получить описание полей сделки |
+| `bitrix_deal_category_list` | Получить список воронок (направлений) |
+| `bitrix_deal_stage_list` | Получить стадии воронки |
+| `bitrix_deal_userfield_list` | Получить пользовательские поля |
+| `bitrix_deal_userfield_add` | Добавить пользовательское поле |
 
-### Контакты (Contacts)
+### Лиды — 8 инструментов
 | Инструмент | Описание |
 |------------|----------|
-| `bitrix_get_contact` | Получить контакт по ID |
-| `bitrix_find_contact` | Найти контакт по телефону/email |
-| `bitrix_create_contact` | Создать новый контакт |
-| `bitrix_update_contact` | Обновить контакт |
+| `bitrix_lead_list` | Получить список лидов |
+| `bitrix_lead_get` | Получить лид по ID |
+| `bitrix_lead_add` | Создать новый лид |
+| `bitrix_lead_update` | Обновить лид |
+| `bitrix_lead_delete` | Удалить лид |
+| `bitrix_lead_fields` | Получить описание полей лида |
+| `bitrix_lead_convert` | Конвертировать лид в сделку/контакт/компанию |
+| `bitrix_lead_userfield_list` | Получить пользовательские поля |
 
-### Компании (Companies)
+### Контакты — 7 инструментов
 | Инструмент | Описание |
 |------------|----------|
-| `bitrix_get_company` | Получить компанию по ID |
-| `bitrix_create_company` | Создать новую компанию |
+| `bitrix_contact_list` | Получить список контактов |
+| `bitrix_contact_get` | Получить контакт по ID |
+| `bitrix_contact_add` | Создать новый контакт |
+| `bitrix_contact_update` | Обновить контакт |
+| `bitrix_contact_delete` | Удалить контакт |
+| `bitrix_contact_fields` | Получить описание полей контакта |
+| `bitrix_contact_search_by_phone` | Найти контакт по номеру телефона |
 
-### Лиды (Leads)
+### Компании — 6 инструментов
 | Инструмент | Описание |
 |------------|----------|
-| `bitrix_get_lead` | Получить лид по ID |
-| `bitrix_create_lead` | Создать новый лид |
+| `bitrix_company_list` | Получить список компаний |
+| `bitrix_company_get` | Получить компанию по ID |
+| `bitrix_company_add` | Создать новую компанию |
+| `bitrix_company_update` | Обновить компанию |
+| `bitrix_company_delete` | Удалить компанию |
+| `bitrix_company_fields` | Получить описание полей компании |
 
-### Timeline
+### Смарт-процессы (Items) — 8 инструментов
 | Инструмент | Описание |
 |------------|----------|
-| `bitrix_add_comment` | Добавить комментарий к сущности |
+| `bitrix_item_list` | Получить элементы смарт-процесса |
+| `bitrix_item_get` | Получить элемент по ID |
+| `bitrix_item_add` | Создать элемент |
+| `bitrix_item_update` | Обновить элемент |
+| `bitrix_item_delete` | Удалить элемент |
+| `bitrix_item_fields` | Получить поля смарт-процесса |
+| `bitrix_item_type_list` | Получить список смарт-процессов |
+| `bitrix_item_type_get` | Получить смарт-процесс по ID |
+
+### Активности — 6 инструментов
+| Инструмент | Описание |
+|------------|----------|
+| `bitrix_activity_list` | Получить список активностей |
+| `bitrix_activity_get` | Получить активность по ID |
+| `bitrix_activity_add` | Создать активность |
+| `bitrix_activity_update` | Обновить активность |
+| `bitrix_activity_delete` | Удалить активность |
+| `bitrix_activity_fields` | Получить описание полей активности |
+
+### Задачи — 5 инструментов
+| Инструмент | Описание |
+|------------|----------|
+| `bitrix_task_list` | Получить список задач |
+| `bitrix_task_get` | Получить задачу по ID |
+| `bitrix_task_add` | Создать новую задачу |
+| `bitrix_task_update` | Обновить задачу |
+| `bitrix_task_close` | Завершить задачу |
+
+### Пользователи — 4 инструмента
+| Инструмент | Описание |
+|------------|----------|
+| `bitrix_user_list` | Получить список пользователей |
+| `bitrix_user_get` | Получить пользователя по ID |
+| `bitrix_user_search` | Поиск пользователей |
+| `bitrix_user_current` | Получить текущего пользователя |
+
+### Дополнительные — 6 инструментов
+| Инструмент | Описание |
+|------------|----------|
+| `bitrix_timeline_comment_add` | Добавить комментарий в timeline |
+| `bitrix_batch` | Выполнить пакетный запрос (до 50 команд) |
+| `bitrix_telephony_call_list` | Получить статистику звонков |
+| `bitrix_im_message_add` | Отправить сообщение в чат |
+| `bitrix_crm_status_list` | Получить справочники CRM |
+| `bitrix_webhook_status` | Проверить статус webhook |
 
 ## Пример использования с ChatGPT
 
@@ -99,9 +163,9 @@ API-прокси для выполнения REST-методов Bitrix24 чер
 > Найди клиента +79995553311, создай сделку на 50 000 и добавь комментарий "Готовы начать"
 
 GPT вызывает:
-1. `bitrix_find_contact` → находит контакт
-2. `bitrix_create_deal` → создаёт сделку
-3. `bitrix_add_comment` → добавляет комментарий
+1. `bitrix_contact_search_by_phone` → находит контакт
+2. `bitrix_deal_add` → создаёт сделку
+3. `bitrix_timeline_comment_add` → добавляет комментарий
 
 ## Запуск локально
 
