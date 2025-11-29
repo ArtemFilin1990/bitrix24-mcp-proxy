@@ -1,0 +1,38 @@
+name: Cleanup Deployments
+
+on:
+  workflow_dispatch:
+    inputs:
+      keep:
+        description: "Number of deployments to keep"
+        required: false
+        default: "10"
+      dry_run:
+        description: "Dry run (do not actually delete)"
+        required: false
+        default: "false"
+        type: boolean
+  schedule:
+    - cron: "0 4 * * 0"
+
+permissions:
+  deployments: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Cleanup old deployments
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          KEEP_DEPLOYMENTS: ${{ github.event.inputs.keep || '10' }}
+        run: |
+          if [[ "${{ github.event.inputs.dry_run }}" == "true" ]]; then
+            bash ./scripts/cleanup-deployments.sh --dry-run
+          else
+            bash ./scripts/cleanup-deployments.sh
+          fi

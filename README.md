@@ -210,9 +210,51 @@ Husky pre-commit запускает линт и тесты перед комми
 - `.github/workflows/ci.yml` — линт, тесты с покрытием и сборка на push/PR.
 - `.github/workflows/security.yml` — `npm audit`, CodeQL и генерация SBOM по расписанию.
 - `.github/workflows/release.yml` — автоматический релиз по тегам `v*.*.*`.
+- `.github/workflows/deploy.yml` — автоматический деплой на Vercel после успешного CI.
+- `.github/workflows/cleanup-deployments.yml` — очистка старых деплоев (еженедельно и вручную).
 - `.github/dependabot.yml` — обновление npm и GitHub Actions зависимостей раз в неделю.
 
 ## Деплой на Vercel
 
-- Перед деплоем задайте переменные окружения (минимум `BITRIX_WEBHOOK_URL`).
+### Требуемые секреты
+
+Для автоматического деплоя необходимо добавить следующие секреты в настройках репозитория (Settings → Secrets and variables → Actions):
+
+| Секрет | Описание |
+|--------|----------|
+| `VERCEL_TOKEN` | API-токен Vercel (создаётся в [Account Settings](https://vercel.com/account/tokens)) |
+| `VERCEL_ORG_ID` | ID организации/команды Vercel (находится в `.vercel/project.json` после `vercel link`) |
+| `VERCEL_PROJECT_ID` | ID проекта Vercel (находится в `.vercel/project.json` после `vercel link`) |
+
+### Конфигурация
+
+- Деплой запускается автоматически после успешного выполнения CI workflow.
+- Также деплой запускается при публикации релиза.
+- Перед деплоем задайте переменные окружения в Vercel (минимум `BITRIX_WEBHOOK_URL`).
 - Vercel маршрутизирует запросы согласно `vercel.json` на функции в `api/mcp/*`.
+
+## Управление деплоями
+
+### Очистка старых деплоев
+
+Для очистки старых GitHub Deployments используется workflow `cleanup-deployments.yml` и скрипт `scripts/cleanup-deployments.sh`.
+
+**Автоматическая очистка:** выполняется еженедельно по расписанию (каждое воскресенье в 04:00 UTC).
+
+**Ручной запуск:** можно запустить вручную через Actions → Cleanup Deployments → Run workflow.
+
+Параметры:
+- `keep` — количество деплоев, которые нужно сохранить (по умолчанию: 10)
+- `dry_run` — режим тестирования без реального удаления
+
+**Локальный запуск:**
+```bash
+# Удалить все кроме последних 10 деплоев
+./scripts/cleanup-deployments.sh
+
+# Сохранить последние 5 деплоев
+./scripts/cleanup-deployments.sh --keep 5
+
+# Тестовый запуск без удаления
+./scripts/cleanup-deployments.sh --dry-run
+```
