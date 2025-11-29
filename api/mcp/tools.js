@@ -63,6 +63,8 @@ export const tools = [
   },
 ];
 
+export const toolNames = tools.map((tool) => tool.name);
+
 const ensureObject = (value, message) => {
   if (value === undefined || value === null) {
     return undefined;

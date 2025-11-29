@@ -46,15 +46,7 @@
                   "properties": {
                     "tools": {
                       "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "name": { "type": "string" },
-                          "description": { "type": "string" },
-                          "parameters": { "type": "object", "additionalProperties": true }
-                        },
-                        "required": ["name", "description"]
-                      }
+                      "items": { "type": "string" }
                     }
                   }
                 }
@@ -103,7 +95,16 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "properties": { "error": { "type": "string" } }
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "message": { "type": "string" },
+                        "code": { "type": "string" }
+                      },
+                      "required": ["message", "code"]
+                    }
+                  }
                 }
               }
             }

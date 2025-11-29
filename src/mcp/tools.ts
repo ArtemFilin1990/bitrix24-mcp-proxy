@@ -2,10 +2,12 @@ import { McpTool } from './types.js';
 
 export class BadRequestError extends Error {
   statusCode = 400;
+  code = 'BAD_REQUEST';
 }
 
 export class ConfigurationError extends Error {
   statusCode = 500;
+  code = 'CONFIGURATION_ERROR';
 }
 
 export const tools: McpTool[] = [
@@ -70,6 +72,8 @@ export const tools: McpTool[] = [
     },
   },
 ];
+
+export const toolNames = tools.map((tool) => tool.name);
 
 const ensureObject = <T extends object>(value: unknown, message: string): T | undefined => {
   if (value === undefined || value === null) {

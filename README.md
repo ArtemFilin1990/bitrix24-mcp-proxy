@@ -31,62 +31,12 @@ GET /mcp/list_tools
 Response:
 {
   "tools": [
-    {
-      "name": "bitrix_get_deal",
-      "description": "Получить сделку Bitrix24 по идентификатору.",
-      "parameters": {
-        "id": { "type": "number", "description": "Числовой ID сделки Bitrix24." }
-      }
-    },
-    {
-      "name": "bitrix_create_deal",
-      "description": "Создать новую сделку Bitrix24 с обязательным заголовком и дополнительными полями.",
-      "parameters": {
-        "title": { "type": "string", "description": "Название сделки." },
-        "fields": {
-          "type": "object",
-          "description": "Дополнительные поля сделки (например, COMMENTS, OPPORTUNITY).",
-          "additionalProperties": true
-        }
-      }
-    },
-    {
-      "name": "bitrix_update_deal",
-      "description": "Обновить поля существующей сделки Bitrix24 по идентификатору.",
-      "parameters": {
-        "id": { "type": "number", "description": "Числовой ID сделки Bitrix24." },
-        "fields": {
-          "type": "object",
-          "description": "Набор полей сделки для обновления (например, STAGE_ID, COMMENTS, OPPORTUNITY).",
-          "additionalProperties": true
-        }
-      }
-    },
-    {
-      "name": "bitrix_find_contact",
-      "description": "Найти контакт по телефону или email (хотя бы один параметр обязателен).",
-      "parameters": {
-        "phone": { "type": "string", "description": "Телефон в международном формате." },
-        "email": { "type": "string", "description": "Email контакта." }
-      }
-    },
-    {
-      "name": "bitrix_add_deal_comment",
-      "description": "Добавить комментарий в ленту сделки.",
-      "parameters": {
-        "id": { "type": "number", "description": "Числовой ID сделки Bitrix24." },
-        "comment": { "type": "string", "description": "Текст комментария." }
-      }
-    },
-    {
-      "name": "bitrix_trigger_automation",
-      "description": "Запустить автоматизацию (триггер) для сущности Bitrix24.",
-      "parameters": {
-        "code": { "type": "string", "description": "Код триггера автоматизации, настроенный в Bitrix24." },
-        "entityType": { "type": "string", "description": "Тип сущности (DEAL или LEAD). По умолчанию DEAL." },
-        "entityId": { "type": "number", "description": "Числовой ID сущности, для которой запускаем автоматизацию." }
-      }
-    }
+    "bitrix_get_deal",
+    "bitrix_create_deal",
+    "bitrix_update_deal",
+    "bitrix_find_contact",
+    "bitrix_add_deal_comment",
+    "bitrix_trigger_automation"
   ]
 }
 
@@ -137,6 +87,28 @@ Body:
 
 Response:
 Возвращает поле `result` с оригинальным ответом Bitrix24 или ошибку с пояснением.
+
+Ошибки приходят в формате:
+{
+  "error": {
+    "message": "Parameter \"id\" must be a positive number",
+    "code": "BAD_REQUEST"
+  }
+}
+
+Требуется заголовок `Content-Type: application/json`.
+
+Environment variables
+
+Создайте файл `.env` на основе примера ниже.
+
+```
+BITRIX_WEBHOOK_URL=https://your-portal.bitrix24.ru/rest/1/token
+MCP_PORT=3000
+NODE_ENV=development
+```
+
+`BITRIX_WEBHOOK_URL` обязателен: это полный webhook URL для Bitrix24 (с ключом). Остальные переменные используются для локального запуска и не должны коммититься в репозиторий.
 
 OpenAPI Specification
 
