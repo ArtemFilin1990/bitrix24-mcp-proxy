@@ -23,9 +23,21 @@ jobs:
         run: npm audit --omit=dev --audit-level=high
 
   codeql:
-    uses: github/codeql-action/.github/workflows/codeql.yml@v3
-    with:
-      languages: javascript
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: javascript-typescript
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
 
   sbom:
     runs-on: ubuntu-latest
