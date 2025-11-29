@@ -2,12 +2,17 @@
 
 API-прокси для выполнения REST-методов Bitrix24 через MCP-коннектор (ChatGPT Custom Actions).
 
-## Переменные окружения
+## Возможности
+- MCP endpoints `/mcp/ping`, `/mcp/list_tools`, `/mcp/call_tool`.
+- Валидация входных параметров для Bitrix24 методов сделок и контактов.
+- Готовые Docker/Compose манифесты и Makefile для быстрой разработки.
+- CI/CD: lint → test → build, аудит зависимостей, CodeQL и автоматический релиз по тегу.
 
+## Переменные окружения
 Создайте файл `.env` на основе `.env.example` и задайте значения:
 
 - `BITRIX_WEBHOOK_URL` — полный URL вебхука Bitrix24 (например, `https://<portal>.bitrix24.ru/rest/<user>/<token>/`).
-- `BITRIX_CLIENT_ID`, `BITRIX_CLIENT_SECRET`, `BITRIX_PORTAL_DOMAIN` — при необходимости получения токена.
+- `BITRIX_CLIENT_ID`, `BITRIX_CLIENT_SECRET`, `BITRIX_PORTAL_DOMAIN` — опциональные параметры OAuth, если не используете вебхуки.
 - `MCP_PORT` — порт локального MCP-сервера (по умолчанию `3000`).
 - `NODE_ENV` — окружение выполнения (`development`/`production`).
 
@@ -19,17 +24,18 @@ API-прокси для выполнения REST-методов Bitrix24 чер
 Проверка доступности MCP-сервера. Возвращает строго `{ "ok": true }`.
 
 ### GET /mcp/list_tools
-Возвращает список доступных MCP-инструментов в виде массива имён:
+Возвращает список доступных MCP-инструментов с описаниями и схемой параметров:
 
 ```json
 {
   "tools": [
-    "bitrix_get_deal",
-    "bitrix_create_deal",
-    "bitrix_update_deal",
-    "bitrix_find_contact",
-    "bitrix_create_contact",
-    "bitrix_update_contact"
+    {
+      "name": "bitrix_get_deal",
+      "description": "Получить сделку Bitrix24 по идентификатору.",
+      "parameters": {
+        "id": { "type": "number", "description": "Числовой ID сделки Bitrix24." }
+      }
+    }
   ]
 }
 ```
@@ -69,14 +75,41 @@ npm run dev
 
 MCP-сервер будет доступен по адресу `http://localhost:${MCP_PORT}/mcp`.
 
+## Docker и Docker Compose
+
+Собрать продакшн-образ:
+
+```bash
+make docker-build
+```
+
+Запустить в режиме разработки с hot-reload:
+
+```bash
+make docker-up
+```
+
+Остановить контейнеры:
+
+```bash
+make docker-down
+```
+
 ## Тестирование и форматирование
 
 ```bash
 npm run lint
-npm test -- --runInBand
+npm test -- --runInBand --coverage
+npm run build
 ```
 
 Husky pre-commit запускает линт и тесты перед коммитом, чтобы предотвратить попадание неформатированного или нерабочего кода.
+
+## CI/CD
+- `.github/workflows/ci.yml` — линт, тесты с покрытием и сборка на push/PR.
+- `.github/workflows/security.yml` — `npm audit`, CodeQL и генерация SBOM по расписанию.
+- `.github/workflows/release.yml` — автоматический релиз по тегам `v*.*.*`.
+- `.github/dependabot.yml` — обновление npm и GitHub Actions зависимостей раз в неделю.
 
 ## Деплой на Vercel
 

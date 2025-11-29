@@ -68,7 +68,7 @@ export const toolDefinitions: ToolDefinition[] = [
   },
 ];
 
-export const tools: McpTool[] = toolDefinitions.map((tool) => tool.name);
+export const tools: McpTool[] = toolDefinitions;
 
 const ensureObject = <T extends object>(value: unknown, message: string): T | undefined => {
   if (value === undefined || value === null) {

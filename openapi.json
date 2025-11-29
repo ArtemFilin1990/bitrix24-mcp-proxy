@@ -47,15 +47,24 @@
                     "tools": {
                       "type": "array",
                       "items": {
-                        "type": "string",
-                        "enum": [
-                          "bitrix_get_deal",
-                          "bitrix_create_deal",
-                          "bitrix_update_deal",
-                          "bitrix_find_contact",
-                          "bitrix_create_contact",
-                          "bitrix_update_contact"
-                        ]
+                        "type": "object",
+                        "required": ["name", "description", "parameters"],
+                        "properties": {
+                          "name": { "type": "string" },
+                          "description": { "type": "string" },
+                          "parameters": {
+                            "type": "object",
+                            "additionalProperties": {
+                              "type": "object",
+                              "properties": {
+                                "type": { "type": "string" },
+                                "description": { "type": "string" },
+                                "optional": { "type": "boolean" },
+                                "additionalProperties": { "type": "boolean" }
+                              }
+                            }
+                          }
+                        }
                       }
                     }
                   }
