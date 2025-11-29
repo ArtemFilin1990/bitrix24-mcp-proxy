@@ -2,8 +2,16 @@
   "version": 2,
   "routes": [
     {
-      "src": "/mcp",
-      "dest": "api/mcp.js"
+      "src": "/mcp/ping",
+      "dest": "api/mcp/ping.js"
+    },
+    {
+      "src": "/mcp/list_tools",
+      "dest": "api/mcp/list_tools.js"
+    },
+    {
+      "src": "/mcp/call_tool",
+      "dest": "api/mcp/call_tool.js"
     },
     {
       "src": "/servers",
