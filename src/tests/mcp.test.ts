@@ -174,6 +174,94 @@ describe('buildBitrixRequest', () => {
     expect(method).toBe('crm.lead.get');
     expect(payload).toEqual({ id: 101 });
   });
+
+  test('throws when tool name is empty', () => {
+    expect(() => buildBitrixRequest('', {})).toThrow(BadRequestError);
+    expect(() => buildBitrixRequest('', {})).toThrow('Tool name is required');
+  });
+
+  test('throws when fields is array instead of object', () => {
+    expect(() => buildBitrixRequest('bitrix_create_deal', { title: 'Test', fields: [1, 2, 3] })).toThrow(BadRequestError);
+    expect(() => buildBitrixRequest('bitrix_create_deal', { title: 'Test', fields: [1, 2, 3] })).toThrow('Parameter "fields" must be an object when provided');
+  });
+
+  test('throws when title is empty string for create_deal', () => {
+    expect(() => buildBitrixRequest('bitrix_create_deal', { title: '   ' })).toThrow(BadRequestError);
+    expect(() => buildBitrixRequest('bitrix_create_deal', { title: '   ' })).toThrow('Parameter "title" must be a non-empty string');
+  });
+
+  test('throws when update_deal fields is empty object', () => {
+    expect(() => buildBitrixRequest('bitrix_update_deal', { id: 1, fields: {} })).toThrow(BadRequestError);
+    expect(() => buildBitrixRequest('bitrix_update_deal', { id: 1, fields: {} })).toThrow('Parameter "fields" must include at least one field');
+  });
+
+  test('throws when update_contact fields is empty object', () => {
+    expect(() => buildBitrixRequest('bitrix_update_contact', { id: 1, fields: {} })).toThrow(BadRequestError);
+    expect(() => buildBitrixRequest('bitrix_update_contact', { id: 1, fields: {} })).toThrow('Parameter "fields" must include at least one field');
+  });
+
+  test('creates contact with email only', () => {
+    const { method, payload } = buildBitrixRequest('bitrix_create_contact', {
+      firstName: 'John',
+      email: 'john@example.com',
+    });
+
+    expect(method).toBe('crm.contact.add');
+    expect(payload).toEqual({
+      fields: {
+        NAME: 'John',
+        EMAIL: [{ VALUE: 'john@example.com', VALUE_TYPE: 'WORK' }],
+      },
+    });
+  });
+
+  test('finds contact with phone only', () => {
+    const { method, payload } = buildBitrixRequest('bitrix_find_contact', {
+      phone: '+15550000001',
+    });
+
+    expect(method).toBe('crm.contact.list');
+    expect(payload).toEqual({
+      filter: { PHONE: '+15550000001' },
+      select: ['ID', 'NAME', 'LAST_NAME', 'PHONE', 'EMAIL'],
+    });
+  });
+
+  test('finds contact with email only', () => {
+    const { method, payload } = buildBitrixRequest('bitrix_find_contact', {
+      email: 'test@example.com',
+    });
+
+    expect(method).toBe('crm.contact.list');
+    expect(payload).toEqual({
+      filter: { EMAIL: 'test@example.com' },
+      select: ['ID', 'NAME', 'LAST_NAME', 'PHONE', 'EMAIL'],
+    });
+  });
+
+  test('creates deal without optional fields', () => {
+    const { method, payload } = buildBitrixRequest('bitrix_create_deal', {
+      title: 'New deal',
+    });
+
+    expect(method).toBe('crm.deal.add');
+    expect(payload).toEqual({ fields: { TITLE: 'New deal' } });
+  });
+
+  test('creates contact with only firstName', () => {
+    const { method, payload } = buildBitrixRequest('bitrix_create_contact', {
+      firstName: 'Jane',
+    });
+
+    expect(method).toBe('crm.contact.add');
+    expect(payload).toEqual({ fields: { NAME: 'Jane' } });
+  });
+
+  test('handles non-object args gracefully', () => {
+    // When args is not an object (like array), should be normalized to empty object
+    // This will throw because id is required (after normalization)
+    expect(() => buildBitrixRequest('bitrix_get_deal', [1, 2, 3] as unknown as Record<string, unknown>)).toThrow(BadRequestError);
+  });
 });
 
 describe('MCP HTTP handlers', () => {
@@ -268,5 +356,75 @@ describe('MCP HTTP handlers', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual({ error: { message: 'id must be a positive number' } });
+  });
+
+  test('POST /mcp/call_tool handles invalid JSON syntax', async () => {
+    const app = await createApp();
+
+    const response = await request(app)
+      .post('/mcp/call_tool')
+      .set('Content-Type', 'application/json')
+      .send('{ invalid json }');
+
+    expect(response.status).toBe(400);
+    expect(response.body).toEqual({ error: { message: 'Invalid JSON payload' } });
+  });
+
+  test('POST /mcp/call_tool rejects non-object body', async () => {
+    const app = await createApp();
+
+    const response = await request(app)
+      .post('/mcp/call_tool')
+      .set('Content-Type', 'application/json')
+      .send([1, 2, 3]);
+
+    expect(response.status).toBe(400);
+    expect(response.body).toEqual({ error: { message: 'Request body must be a JSON object' } });
+  });
+
+  test('POST /mcp/call_tool handles upstream 500 error', async () => {
+    const app = await createApp();
+
+    nock(BITRIX_BASE)
+      .post(`${BITRIX_PATH}crm.deal.get.json`, { id: 42 })
+      .reply(500, { error: 'Internal server error' });
+
+    const response = await request(app)
+      .post('/mcp/call_tool')
+      .set('Content-Type', 'application/json')
+      .send({ tool: 'bitrix_get_deal', args: { id: 42 } });
+
+    expect(response.status).toBe(500);
+  });
+
+  test('POST /mcp/call_tool handles upstream 400 error as 502', async () => {
+    const app = await createApp();
+
+    nock(BITRIX_BASE)
+      .post(`${BITRIX_PATH}crm.deal.get.json`, { id: 42 })
+      .reply(400, { error: 'Bad request from Bitrix' });
+
+    const response = await request(app)
+      .post('/mcp/call_tool')
+      .set('Content-Type', 'application/json')
+      .send({ tool: 'bitrix_get_deal', args: { id: 42 } });
+
+    expect(response.status).toBe(502);
+  });
+
+  test('POST /mcp/call_tool returns response data when no result field', async () => {
+    const app = await createApp();
+
+    nock(BITRIX_BASE)
+      .post(`${BITRIX_PATH}crm.deal.get.json`, { id: 42 })
+      .reply(200, { data: 'custom response' });
+
+    const response = await request(app)
+      .post('/mcp/call_tool')
+      .set('Content-Type', 'application/json')
+      .send({ tool: 'bitrix_get_deal', args: { id: 42 } });
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({ result: { data: 'custom response' } });
   });
 });
