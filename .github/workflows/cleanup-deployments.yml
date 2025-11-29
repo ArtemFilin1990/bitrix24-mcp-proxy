@@ -32,7 +32,7 @@ jobs:
           KEEP_DEPLOYMENTS: ${{ github.event.inputs.keep || '10' }}
         run: |
           if [[ "${{ github.event.inputs.dry_run }}" == "true" ]]; then
-            ./scripts/cleanup-deployments.sh --dry-run
+            bash ./scripts/cleanup-deployments.sh --dry-run
           else
-            ./scripts/cleanup-deployments.sh
+            bash ./scripts/cleanup-deployments.sh
           fi

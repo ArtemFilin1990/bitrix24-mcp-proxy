@@ -75,7 +75,6 @@ echo ""
 
 for deployment_id in "${TO_DELETE[@]}"; do
   echo "Processing deployment $deployment_id..."
-  
   if [[ "$DRY_RUN" == "true" ]]; then
     echo "  [DRY RUN] Would set deployment $deployment_id status to inactive"
     echo "  [DRY RUN] Would delete deployment $deployment_id"
