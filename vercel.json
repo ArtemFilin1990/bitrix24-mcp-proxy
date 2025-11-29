@@ -7,6 +7,7 @@
   },
   "routes": [
     { "src": "/mcp/ping", "dest": "/api/mcp/ping.js" },
+    { "src": "/mcp/health", "dest": "/api/mcp/health.js" },
     { "src": "/mcp/list_tools", "dest": "/api/mcp/list_tools.js" },
     { "src": "/mcp/call_tool", "dest": "/api/mcp/call_tool.js" },
     { "src": "/servers", "dest": "/api/servers.js" },

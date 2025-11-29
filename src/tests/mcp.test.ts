@@ -206,6 +206,15 @@ describe('MCP HTTP handlers', () => {
     expect(response.body).toEqual({ ok: true });
   });
 
+  test('GET /mcp/health returns healthy status', async () => {
+    const app = await createApp();
+
+    const response = await request(app).get('/mcp/health');
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({ status: 'healthy' });
+  });
+
   test('GET /mcp/list_tools returns tool definitions', async () => {
     const app = await createApp();
 

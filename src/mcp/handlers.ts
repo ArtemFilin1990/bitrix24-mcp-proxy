@@ -67,3 +67,7 @@ export const callTool = async (req: Request, res: Response): Promise<void> => {
 export const ping = (_req: Request, res: Response): void => {
   res.status(200).json({ ok: true });
 };
+
+export const health = (_req: Request, res: Response): void => {
+  res.status(200).json({ status: 'healthy' });
+};
