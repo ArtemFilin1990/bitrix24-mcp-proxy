@@ -20,23 +20,58 @@ Response:
   ]
 }
 
-POST /mcp
+GET /mcp/ping
 
-Выполняет вызов метода Bitrix24 через прокси.
+Проверка доступности MCP-сервера. Возвращает `{ "ok": true }`.
+
+GET /mcp/list_tools
+
+Возвращает список инструментов MCP в формате, ожидаемом ChatGPT.
+
+Response:
+{
+  "tools": [
+    {
+      "name": "bitrix_get_deal",
+      "description": "Получить сделку Bitrix24 по идентификатору.",
+      "parameters": {
+        "id": { "type": "number", "description": "Числовой ID сделки Bitrix24." }
+      }
+    },
+    {
+      "name": "bitrix_create_deal",
+      "description": "Создать новую сделку Bitrix24 с обязательным заголовком и дополнительными полями.",
+      "parameters": {
+        "title": { "type": "string", "description": "Название сделки." },
+        "fields": {
+          "type": "object",
+          "description": "Дополнительные поля сделки (например, COMMENTS, OPPORTUNITY).",
+          "additionalProperties": true
+        }
+      }
+    }
+  ]
+}
+
+POST /mcp/call_tool
+
+Выполняет вызов инструмента Bitrix24.
 
 Body:
+{
+  "tool": "bitrix_get_deal",
+  "args": { "id": 1 }
+}
+
+или
 
 {
-  "webhook": "https://example.bitrix24.ru/rest/1/KEY/",
-  "method": "crm.deal.list",
-  "params": {
-    "select": ["ID", "TITLE"],
-    "filter": { "STAGE_ID": "NEW" }
-  }
+  "tool": "bitrix_create_deal",
+  "args": { "title": "New Deal", "fields": { "COMMENTS": "Комментарий" } }
 }
 
 Response:
-Возвращает оригинальный ответ Bitrix24.
+Возвращает поле `result` с оригинальным ответом Bitrix24 или ошибку с пояснением.
 
 OpenAPI Specification
 
@@ -49,17 +84,9 @@ openapi.json
 Деплой на Vercel
 
 1. Создать GitHub репозиторий.
-
-
 2. Залить файлы проекта.
-
-
 3. Развернуть через https://vercel.com/new.
-
-
 4. Использовать URL:
-
-
 
 https://PROJECT.vercel.app/servers
 
@@ -67,12 +94,18 @@ https://PROJECT.vercel.app/servers
 
 /
 ├── api/
-│   ├── mcp.js
+│   ├── mcp/
+│   │   ├── bitrix.js
+│   │   ├── call_tool.js
+│   │   ├── errors.js
+│   │   ├── list_tools.js
+│   │   ├── ping.js
+│   │   └── tools.js
 │   └── servers.js
 ├── openapi.json
 ├── vercel.json
 ├── package.json
-└── README.md
+├── README.md
 
 Защита (опционально)
 

@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Bitrix24 MCP Proxy",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "description": "Proxy для выполнения Bitrix24 REST API через MCP."
   },
   "servers": [
@@ -11,10 +11,63 @@
     }
   ],
   "paths": {
-    "/mcp": {
+    "/mcp/ping": {
+      "get": {
+        "operationId": "ping",
+        "summary": "Проверка доступности MCP",
+        "responses": {
+          "200": {
+            "description": "MCP сервер отвечает",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": { "type": "boolean" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/mcp/list_tools": {
+      "get": {
+        "operationId": "listTools",
+        "summary": "Получить список MCP инструментов",
+        "responses": {
+          "200": {
+            "description": "Список инструментов MCP",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "tools": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "name": { "type": "string" },
+                          "description": { "type": "string" },
+                          "parameters": { "type": "object", "additionalProperties": true }
+                        },
+                        "required": ["name", "description"]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/mcp/call_tool": {
       "post": {
-        "operationId": "callBitrixMethod",
-        "summary": "Выполнить метод Bitrix24 через MCP Proxy",
+        "operationId": "callTool",
+        "summary": "Выполнить инструмент Bitrix24",
         "requestBody": {
           "required": true,
           "content": {
@@ -22,34 +75,35 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "webhook": {
-                    "type": "string",
-                    "description": "Полный Bitrix24 webhook URL"
-                  },
-                  "method": {
-                    "type": "string",
-                    "description": "Название метода Bitrix24"
-                  },
-                  "params": {
-                    "type": "object",
-                    "description": "Параметры метода",
-                    "additionalProperties": true
-                  }
+                  "tool": { "type": "string" },
+                  "args": { "type": "object", "additionalProperties": true }
                 },
-                "required": ["webhook", "method"]
+                "required": ["tool"]
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "Ответ Bitrix24 через MCP",
+            "description": "Успешный ответ инструмента",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "description": "Ответ Bitrix24",
-                  "additionalProperties": true
+                  "properties": {
+                    "result": { "type": "object", "additionalProperties": true }
+                  }
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "Ошибка запроса",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "error": { "type": "string" } }
                 }
               }
             }
