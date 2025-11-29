@@ -6,9 +6,10 @@
     "dev": "ts-node-dev --respawn src/index.ts",
     "start": "node build/index.js",
     "build": "tsc",
+    "vercel-build": "tsc",
     "lint": "eslint . --ext .ts",
     "test": "jest --runInBand",
-    "prepare": "husky install"
+    "prepare": "husky"
   },
   "dependencies": {
     "axios": "^1.7.7",
