@@ -18,7 +18,7 @@
     "axios": "^1.13.2",
     "dotenv": "^16.4.5",
     "express": "^5.1.0",
-    "@apidevtools/swagger-parser": "^10.0.3"
+    "@apidevtools/swagger-parser": "^12.1.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.15.0",
